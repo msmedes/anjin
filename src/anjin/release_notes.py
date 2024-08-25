@@ -12,6 +12,9 @@ from packaging import version
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = typer.Typer()
 console = Console()
@@ -207,7 +210,8 @@ async def process_dependency(
 
 @app.command()
 def check_updates(
-    requirements_file: str = "platform-app/requirements.in", codebase_path: str = "."
+    requirements_file: str = typer.Option("--requirements", "-r", help="Path to the requirements file"),
+    codebase_path: str = typer.Option("--codebase", "-c", help="Path to the codebase"),
 ):
     async def main():
         console.print("[bold green]Parsing requirements file...[/bold green]")

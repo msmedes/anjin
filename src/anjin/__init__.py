@@ -1,2 +1,4 @@
-def hello() -> str:
-    return "Hello from anjin!"
+from .release_notes import app
+
+def main():
+  app()
