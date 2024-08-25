@@ -56,9 +56,13 @@ packaging==24.1
 pycparser==2.22
     # via cffi
 pydantic==2.8.2
+    # via anjin
     # via openai
+    # via pydantic-settings
 pydantic-core==2.20.1
     # via pydantic
+pydantic-settings==2.4.0
+    # via anjin
 pygithub==2.3.0
     # via anjin
 pygments==2.18.0
@@ -69,6 +73,7 @@ pynacl==1.5.0
     # via pygithub
 python-dotenv==1.0.1
     # via anjin
+    # via pydantic-settings
 requests==2.32.3
     # via pygithub
 rich==13.7.1

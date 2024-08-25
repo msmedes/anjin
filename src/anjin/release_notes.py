@@ -12,18 +12,17 @@ from packaging import version
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from dotenv import load_dotenv
 
-load_dotenv()
+from anjin.config import settings
 
 app = typer.Typer()
 console = Console()
 
 # Initialize OpenAI client
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 # Initialize GitHub client
-g = Github(os.getenv("GITHUB_TOKEN"))
+g = Github(settings.GITHUB_TOKEN)
 
 change_dict = {
     "cachetools": "CHANGELOG.rst",
