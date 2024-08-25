@@ -75,7 +75,6 @@ async def fetch_changelog(package: str, version: str) -> str:
             repo.get_contents, change_dict.get(package, "CHANGELOG.rst")
         )
         changelog = contents.decoded_content.decode()
-        changelog = contents.decoded_content.decode()
 
         return changelog
     except Exception as e:
