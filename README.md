@@ -12,3 +12,6 @@ Right now accepts absolute paths to the requirements file and codebase.  Also pr
 You will need to set the OPENAI_API_KEY and GITHUB_TOKEN environment variables in a `.env` file
 
 ### anjin "in action"
+
+https://github.com/user-attachments/assets/f837de32-0a0e-4172-9c6a-d81bad04528d
+
