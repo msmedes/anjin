@@ -1,6 +1,6 @@
 # anjin: EXTREMELY WIP
 
-`anjin` is a tool to help you understand the impact of a new release of a Python package.  It is extremely rough around the edges.  It will not guide you to the coast of Japan.
+`anjin` is a tool to help you understand the impact of a new release of a Python package.  It is extremely rough around the edges.  It will not guide you to the coast of feudal Japan in order to establish a trade route to compete with the Portuguese.
 
 To run:
 - [install rye](https://rye.run/docs/installation)
