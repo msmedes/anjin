@@ -2,41 +2,33 @@ import ast
 import asyncio
 import os
 import re
-from enum import Enum
 
 import httpx
+import tiktoken
 import typer
+from bs4 import BeautifulSoup
 from github import Github
 from openai import AsyncOpenAI
-from packaging import version
+from packaging import version as pkg_version
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from anjin.changelogs import (
+    ChangelogRetrievalResult,
+    ChangeLogRetrievalStatus,
+    ChangelogSource,
+    changelog_sources,
+)
 from anjin.config import settings
 
 app = typer.Typer()
 console = Console()
 
-# Initialize OpenAI client
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+tiktoken_encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
-# Initialize GitHub client
 g = Github(settings.GITHUB_TOKEN)
-
-change_dict = {
-    "cachetools": "CHANGELOG.rst",
-    "aiomysql": "CHANGES.txt",
-    "asyncache": "CHANGELOG.rst",
-    "email-validator": "CHANGELOG.md",
-    "cryptography": "CHANGELOG.rst",
-}
-
-
-class ChangeLogRetrievalStatus(Enum):
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
-    NOT_FOUND = "NOT_FOUND"
 
 
 async def parse_requirements(file_path: str) -> dict:
@@ -60,25 +52,80 @@ async def get_latest_version(package: str) -> str:
     return None
 
 
-async def fetch_changelog(package: str, version: str) -> str:
+async def fetch_github_changelog(repo, changelog_info, current_version, latest_version):
+    contents = await asyncio.to_thread(repo.get_contents, changelog_info.path)
+    full_changelog = contents.decoded_content.decode()
+
+    # Filter changelog to only include relevant versions
+    filtered_changelog = filter_changelog_by_version(
+        full_changelog, current_version, latest_version
+    )
+
+    return ChangelogRetrievalResult(
+        status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
+    )
+
+
+async def fetch_http_changelog(changelog_info, current_version, latest_version):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(changelog_info.path)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            full_changelog = soup.get_text(separator="\n", strip=True)
+
+            # Filter changelog to only include relevant versions
+            filtered_changelog = filter_changelog_by_version(
+                full_changelog, current_version, latest_version
+            )
+
+            return ChangelogRetrievalResult(
+                status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
+            )
+        else:
+            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
+
+
+def filter_changelog_by_version(changelog, current_version, latest_version):
+    # This is a simplified version. You may need to adjust it based on the actual changelog format
+    lines = changelog.split("\n")
+    filtered_lines = []
+    include = False
+    for line in lines:
+        if line.strip().startswith(latest_version):
+            include = True
+        if line.strip().startswith(current_version):
+            break
+        if include:
+            filtered_lines.append(line)
+    return "\n".join(filtered_lines)
+
+
+async def fetch_changelog(
+    package: str, current_version: str, latest_version: str
+) -> ChangelogRetrievalResult:
     try:
-        # Search for the package on GitHub
-        repo = await asyncio.to_thread(
-            g.search_repositories, f"{package} language:python"
-        )
-        repo = repo[0]
-        repo.get_contents(change_dict.get(package, "CHANGELOG.rst"))
+        changelog_info = getattr(changelog_sources, package, None)
+        if not changelog_info:
+            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
 
-        # Try to fetch the changelog file
-        contents = await asyncio.to_thread(
-            repo.get_contents, change_dict.get(package, "CHANGELOG.rst")
-        )
-        changelog = contents.decoded_content.decode()
+        if changelog_info.source == ChangelogSource.GITHUB:
+            repo = await asyncio.to_thread(
+                g.search_repositories, f"{package} language:python"
+            )
+            repo = repo[0]
+            return await fetch_github_changelog(
+                repo, changelog_info, current_version, latest_version
+            )
+        elif changelog_info.source == ChangelogSource.HTTP:
+            return await fetch_http_changelog(
+                changelog_info, current_version, latest_version
+            )
+        else:
+            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
 
-        return changelog
     except Exception as e:
         print(f"Error fetching changelog for {package}: {str(e)}")
-        return ChangeLogRetrievalStatus.FAILURE
+        return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
 
 
 def find_package_usage(file_path: str, package_name: str) -> list:
@@ -126,11 +173,12 @@ async def get_relevant_code_snippets(
                         snippets.append(f"File: {file_path}\n{snippet}")
                     if len(snippets) >= max_snippets:
                         return snippets
-    print(snippets)
     return snippets
 
 
-async def summarize_changes(changelog: str, package: str, codebase_path: str) -> str:
+async def summarize_changes(
+    changelog: str, package: str, codebase_path: str, requirements_file: str
+) -> str:
     if changelog in [
         ChangeLogRetrievalStatus.FAILURE,
         ChangeLogRetrievalStatus.NOT_FOUND,
@@ -138,10 +186,16 @@ async def summarize_changes(changelog: str, package: str, codebase_path: str) ->
         return "Changelog not found"
     snippets = await get_relevant_code_snippets(codebase_path, package)
     codebase_sample = "\n\n".join(snippets)
+    with open(requirements_file, "r") as f:
+        requirements_content = f.read()
 
     prompt = f"""
-    Analyze the following changelog for the Python package '{package}' and provide a concise summary of changes that are likely to be relevant to the given codebase. Focus on API changes, new features, deprecations, and breaking changes. Ignore minor bug fixes or internal changes unless they seem particularly important.
-    No yapping.  Do not preface your response with anything like "Here is a summary of the changes" or anything like that.  Just give me the summary.
+    Analyze the following changelog for the Python package '{package}' and provide a concise summary
+    of changes that are likely to be relevant to the given codebase. This changelog only includes
+    changes between the currently used version and the latest version. Focus on API changes, new features,
+    deprecations, and breaking changes. Ignore minor bug fixes or internal changes unless they seem particularly important.
+    No yapping. Do not preface your response with anything like 
+    "Here is a summary of the changes" or anything like that. Just give me the summary.
     If there are no relevant changes, just say "No relevant changes".
 
     Start with a tl;dr summary of the changes and whether they are likely to be relevant to the codebase.
@@ -152,10 +206,13 @@ async def summarize_changes(changelog: str, package: str, codebase_path: str) ->
     Relevant code snippets from the codebase:
     {codebase_sample}
 
+    Project requirements:
+    {requirements_content}
+
     Provide a concise, brief, bullet-point summary of relevant changes, considering how they might affect the given code snippets:
     """
 
-    # print(prompt)
+    # print("len", len(prompt), package, len(tiktoken_encoding.encode(prompt)))
 
     response = await client.chat.completions.create(
         model="gpt-4o-mini",
@@ -170,35 +227,43 @@ async def summarize_changes(changelog: str, package: str, codebase_path: str) ->
     )
 
     return response.choices[0].message.content.strip()
+    # return "No relevant change"
 
 
 async def process_dependency(
     package: str,
     current_version: str,
     codebase_path: str,
+    requirements_file: str,
     progress: Progress,
     task_id: int,
 ):
     progress.update(task_id, advance=0, description=f"[cyan]Checking {package}...")
     latest_version = await get_latest_version(package)
 
-    if latest_version and version.parse(latest_version) > version.parse(
+    if latest_version and pkg_version.parse(latest_version) > pkg_version.parse(
         current_version
     ):
         progress.update(
             task_id, advance=0, description=f"[cyan]Fetching changelog for {package}..."
         )
-        changelog = await fetch_changelog(package, latest_version)
-
-        progress.update(
-            task_id,
-            advance=0,
-            description=f"[cyan]Summarizing changes for {package}...",
+        changelog_result = await fetch_changelog(
+            package, current_version, latest_version
         )
-        summary = await summarize_changes(changelog, package, codebase_path)
+
+        if changelog_result.status == ChangeLogRetrievalStatus.SUCCESS:
+            progress.update(
+                task_id,
+                advance=0,
+                description=f"[cyan]Summarizing changes for {package}...",
+            )
+            summary = await summarize_changes(
+                changelog_result.changelog, package, codebase_path, requirements_file
+            )
+            changelog_result.summary = summary
 
         progress.update(task_id, advance=1, description=f"[green]Completed {package}")
-        return package, current_version, latest_version, summary
+        return package, current_version, latest_version, changelog_result
     else:
         progress.update(
             task_id, advance=1, description=f"[yellow]{package} is up to date"
@@ -208,7 +273,9 @@ async def process_dependency(
 
 @app.command()
 def check_updates(
-    requirements_file: str = typer.Option("--requirements", "-r", help="Path to the requirements file"),
+    requirements_file: str = typer.Option(
+        "--requirements", "-r", help="Path to the requirements file"
+    ),
     codebase_path: str = typer.Option("--codebase", "-c", help="Path to the codebase"),
 ):
     async def main():
@@ -224,14 +291,14 @@ def check_updates(
             overall_task = progress.add_task(
                 "[cyan]Processing dependencies...", total=len(dependencies)
             )
-            # items = [
-            #     item
-            #     for item in dependencies.items()
-            #     if item[0] in ["asyncache", "cachetools", "cryptography"]
-            # ]
             tasks = [
                 process_dependency(
-                    package, current_version, codebase_path, progress, overall_task
+                    package,
+                    current_version,
+                    codebase_path,
+                    requirements_file,
+                    progress,
+                    overall_task,
                 )
                 for package, current_version in dependencies.items()
             ]
@@ -242,15 +309,21 @@ def check_updates(
         table.add_column("Package", style="cyan")
         table.add_column("Current Version", style="magenta")
         table.add_column("Latest Version", style="green")
-        table.add_column("Summary", style="yellow")
+        table.add_column("Status", style="yellow")
+        table.add_column("Summary", style="blue")
 
         updates_found = False
-        summary_styles = ["yellow", "blue", "pink3"]
-        for index, result in enumerate(results):
+        for result in results:
             if result:
                 updates_found = True
-                summary_style = summary_styles[index % len(summary_styles)]
-                table.add_row(*result, style=summary_style)
+                package, current_version, latest_version, changelog_result = result
+                table.add_row(
+                    package,
+                    current_version,
+                    latest_version,
+                    changelog_result.status.value,
+                    changelog_result.summary or "N/A",
+                )
 
         if updates_found:
             console.print(table)
