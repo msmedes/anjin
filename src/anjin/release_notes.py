@@ -6,8 +6,7 @@ import re
 import httpx
 import tiktoken
 import typer
-from bs4 import BeautifulSoup
-from github import Github, Repository
+import changelogs
 from openai import AsyncOpenAI
 from packaging import version as pkg_version
 from rich.console import Console
@@ -18,18 +17,17 @@ from typing_extensions import Annotated
 from anjin.changelog_registry import (
     ChangelogRetrievalResult,
     ChangeLogRetrievalStatus,
-    ChangelogSource,
-    changelog_registry,
 )
 from anjin.config import settings
+
+os.environ["CHANGELOGS_GITHUB_API_TOKEN"] = settings.GITHUB_TOKEN
+changelogs.GITHUB_API_TOKEN = settings.GITHUB_TOKEN
 
 app = typer.Typer()
 console = Console()
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 tiktoken_encoding = tiktoken.encoding_for_model("gpt-4o-mini")
-
-g = Github(settings.GITHUB_TOKEN)
 
 
 async def parse_requirements(file_path: str) -> dict:
@@ -53,96 +51,33 @@ async def get_latest_version(package: str) -> str:
     return None
 
 
-async def fetch_github_changelog(repo, changelog_info, current_version, latest_version):
-    contents = await asyncio.to_thread(repo.get_contents, changelog_info.path)
-    full_changelog = contents.decoded_content.decode()
-
-    # Filter changelog to only include relevant versions
-    filtered_changelog = filter_changelog_by_version(
-        full_changelog, current_version, latest_version
-    )
-
-    return ChangelogRetrievalResult(
-        status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
-    )
-
-
-async def fetch_http_changelog(changelog_info, current_version, latest_version):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(changelog_info.path)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "html.parser")
-            full_changelog = soup.get_text(separator="\n", strip=True)
-
-            # Filter changelog to only include relevant versions
-            filtered_changelog = filter_changelog_by_version(
-                full_changelog, current_version, latest_version
-            )
-
-            return ChangelogRetrievalResult(
-                status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
-            )
-        else:
-            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
-
-
-def filter_changelog_by_version(changelog, current_version, latest_version):
-    # This is a simplified version. You may need to adjust it based on the actual changelog format
-    lines = changelog.split("\n")
-    filtered_lines = []
-    include = False
-    for line in lines:
-        if line.strip().startswith(latest_version):
-            include = True
-        if line.strip().startswith(current_version):
-            break
-        if include:
-            filtered_lines.append(line)
-    return "\n".join(filtered_lines)
+def filter_changelog_by_version(changelog: dict, current_version: str, latest_version: str) -> str:
+    filtered_entries = []
+    for version, changes in changelog.items():
+        if pkg_version.parse(version) > pkg_version.parse(current_version) and \
+           pkg_version.parse(version) <= pkg_version.parse(latest_version):
+            filtered_entries.append(f"## {version}\n{changes}")
+    return "\n\n".join(filtered_entries)
 
 
 async def fetch_changelog(
     package: str, current_version: str, latest_version: str
 ) -> ChangelogRetrievalResult:
     try:
-        changelog_info = getattr(changelog_sources, package, None)
-        if not changelog_info:
-            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
-
-        if changelog_info.source == ChangelogSource.GITHUB:
-            repo = await find_github_repo(package)
-            if repo:
-                return await fetch_github_changelog(
-                    repo, changelog_info, current_version, latest_version
-                )
-            else:
-                return ChangelogRetrievalResult(
-                    status=ChangeLogRetrievalStatus.NOT_FOUND
-                )
-        elif changelog_info.source == ChangelogSource.HTTP:
-            return await fetch_http_changelog(
-                changelog_info, current_version, latest_version
+        changelog = changelogs.get(package)
+        if changelog:
+            # Filter changelog to only include relevant versions
+            filtered_changelog = filter_changelog_by_version(
+                changelog, current_version, latest_version
+            )
+            return ChangelogRetrievalResult(
+                status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
             )
         else:
             return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
-
     except Exception as e:
         print(f"Error fetching changelog for {package}: {str(e)}")
         return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
-
-
-async def find_github_repo(package: str) -> Repository.Repository | None:
-    changelog_info = changelog_registry.get(package)
-    if (
-        changelog_info
-        and changelog_info.source == ChangelogSource.GITHUB
-        and changelog_info.repo
-    ):
-        try:
-            return await asyncio.to_thread(g.get_repo, changelog_info.repo)
-        except Exception as e:
-            print(f"Error fetching repo for {package}: {str(e)}")
-    return None
 
 
 def find_package_usage(file_path: str, package_name: str) -> list:
@@ -300,8 +235,7 @@ def check_updates(
     ] = False,
 ):
     async def main():
-        if debug:
-            settings.DEBUG = True
+        settings.DEBUG = debug
         console.print("[bold green]Parsing requirements file...[/bold green]")
         dependencies = await parse_requirements(requirements_file)
         console.print(f"[bold]Found {len(dependencies)} dependencies.[/bold]")
