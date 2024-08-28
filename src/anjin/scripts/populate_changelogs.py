@@ -11,6 +11,14 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 
 from anjin.config import settings
 
+"""
+You probably shouldn't run this script.  It is very slow because of Github's rate limits.
+This script populates a JSON file with information about the changelogs of popular Python packages.
+It uses the GitHub API to search for repositories, check for changelog files or release notes,
+and then saves the information to a JSON file.
+"""
+
+
 console = Console()
 
 
@@ -180,7 +188,6 @@ def main():
         f"[bold blue]Loaded {len(existing_data)} existing package infos.[/bold blue]"
     )
 
-    # Initialize the file with an empty list if it doesn't exist
     if not existing_data:
         with open(file_path, "w") as f:
             json.dump([], f)
