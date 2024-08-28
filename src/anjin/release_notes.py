@@ -7,18 +7,20 @@ import httpx
 import tiktoken
 import typer
 from bs4 import BeautifulSoup
-from github import Github
+from github import Github, Repository
 from openai import AsyncOpenAI
 from packaging import version as pkg_version
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
+from typing_extensions import Annotated
 
-from anjin.changelogs import (
+from anjin.changelog_registry import (
     ChangelogRetrievalResult,
     ChangeLogRetrievalStatus,
     ChangelogSource,
     changelog_sources,
+    changelog_registry,
 )
 from anjin.config import settings
 
@@ -109,13 +111,15 @@ async def fetch_changelog(
             return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
 
         if changelog_info.source == ChangelogSource.GITHUB:
-            repo = await asyncio.to_thread(
-                g.search_repositories, f"{package} language:python"
-            )
-            repo = repo[0]
-            return await fetch_github_changelog(
-                repo, changelog_info, current_version, latest_version
-            )
+            repo = await find_github_repo(package)
+            if repo:
+                return await fetch_github_changelog(
+                    repo, changelog_info, current_version, latest_version
+                )
+            else:
+                return ChangelogRetrievalResult(
+                    status=ChangeLogRetrievalStatus.NOT_FOUND
+                )
         elif changelog_info.source == ChangelogSource.HTTP:
             return await fetch_http_changelog(
                 changelog_info, current_version, latest_version
@@ -126,6 +130,20 @@ async def fetch_changelog(
     except Exception as e:
         print(f"Error fetching changelog for {package}: {str(e)}")
         return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
+
+
+async def find_github_repo(package: str) -> Repository.Repository | None:
+    changelog_info = changelog_registry.get(package)
+    if (
+        changelog_info
+        and changelog_info.source == ChangelogSource.GITHUB
+        and changelog_info.repo
+    ):
+        try:
+            return await asyncio.to_thread(g.get_repo, changelog_info.repo)
+        except Exception as e:
+            print(f"Error fetching repo for {package}: {str(e)}")
+    return None
 
 
 def find_package_usage(file_path: str, package_name: str) -> list:
@@ -212,22 +230,21 @@ async def summarize_changes(
     Provide a concise, brief, bullet-point summary of relevant changes, considering how they might affect the given code snippets:
     """
 
-    # print("len", len(prompt), package, len(tiktoken_encoding.encode(prompt)))
-
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant that summarizes changelogs for developers.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=1024,
-    )
-
-    return response.choices[0].message.content.strip()
-    # return "No relevant change"
+    if not settings.DEBUG:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that summarizes changelogs for developers.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=1024,
+        )
+        return response.choices[0].message.content.strip()
+    else:
+        return "Debug mode"
 
 
 async def process_dependency(
@@ -273,12 +290,19 @@ async def process_dependency(
 
 @app.command()
 def check_updates(
-    requirements_file: str = typer.Option(
-        "--requirements", "-r", help="Path to the requirements file"
-    ),
-    codebase_path: str = typer.Option("--codebase", "-c", help="Path to the codebase"),
+    requirements_file: Annotated[
+        str, typer.Option("--requirements", "-r", help="Path to the requirements file")
+    ],
+    codebase_path: Annotated[
+        str, typer.Option("--codebase", "-c", help="Path to the codebase")
+    ],
+    debug: Annotated[
+        bool, typer.Option("--debug", "-d", help="Enable debug mode")
+    ] = False,
 ):
     async def main():
+        if debug:
+            settings.DEBUG = True
         console.print("[bold green]Parsing requirements file...[/bold green]")
         dependencies = await parse_requirements(requirements_file)
         console.print(f"[bold]Found {len(dependencies)} dependencies.[/bold]")
