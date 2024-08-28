@@ -4,9 +4,7 @@ import os
 import re
 
 import httpx
-import tiktoken
 import typer
-import changelogs
 from openai import AsyncOpenAI
 from packaging import version as pkg_version
 from rich.console import Console
@@ -21,13 +19,12 @@ from anjin.changelog_registry import (
 from anjin.config import settings
 
 os.environ["CHANGELOGS_GITHUB_API_TOKEN"] = settings.GITHUB_TOKEN
-changelogs.GITHUB_API_TOKEN = settings.GITHUB_TOKEN
+import changelogs  # noqa
 
 app = typer.Typer()
 console = Console()
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-tiktoken_encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
 
 async def parse_requirements(file_path: str) -> dict:
@@ -51,11 +48,14 @@ async def get_latest_version(package: str) -> str:
     return None
 
 
-def filter_changelog_by_version(changelog: dict, current_version: str, latest_version: str) -> str:
+def filter_changelog_by_version(
+    changelog: dict, current_version: str, latest_version: str
+) -> str:
     filtered_entries = []
     for version, changes in changelog.items():
-        if pkg_version.parse(version) > pkg_version.parse(current_version) and \
-           pkg_version.parse(version) <= pkg_version.parse(latest_version):
+        if pkg_version.parse(version) > pkg_version.parse(
+            current_version
+        ) and pkg_version.parse(version) <= pkg_version.parse(latest_version):
             filtered_entries.append(f"## {version}\n{changes}")
     return "\n\n".join(filtered_entries)
 
