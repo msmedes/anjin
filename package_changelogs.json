@@ -558,4 +558,6 @@
 {"name": "howdoi", "github_repo": "gleitz/howdoi", "changelog_type": null, "changelog_path": null},
 {"name": "vanna", "github_repo": "vanna-ai/vanna", "changelog_type": "github_releases", "changelog_path": null},
 {"name": "binwalk", "github_repo": "ReFirmLabs/binwalk", "changelog_type": "github_releases", "changelog_path": null},
-{"name": "scapy", "github_repo": "secdev/scapy", "changelog_type": "github_releases", "changelog_path": null}]
+{"name": "scapy", "github_repo": "secdev/scapy", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "prowler", "github_repo": "prowler-cloud/prowler", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "ParlAI", "github_repo": "facebookresearch/ParlAI", "changelog_type": "file", "changelog_path": "NEWS.md"}]
