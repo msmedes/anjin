@@ -554,4 +554,8 @@
 {"name": "python-mastery", "github_repo": "dabeaz-course/python-mastery", "changelog_type": "github_releases", "changelog_path": null},
 {"name": "opensnitch", "github_repo": "evilsocket/opensnitch", "changelog_type": "github_releases", "changelog_path": null},
 {"name": "chalice", "github_repo": "aws/chalice", "changelog_type": "file", "changelog_path": "CHANGELOG.md"},
-{"name": "ml-engineering", "github_repo": "stas00/ml-engineering", "changelog_type": null, "changelog_path": null}]
+{"name": "ml-engineering", "github_repo": "stas00/ml-engineering", "changelog_type": null, "changelog_path": null},
+{"name": "howdoi", "github_repo": "gleitz/howdoi", "changelog_type": null, "changelog_path": null},
+{"name": "vanna", "github_repo": "vanna-ai/vanna", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "binwalk", "github_repo": "ReFirmLabs/binwalk", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "scapy", "github_repo": "secdev/scapy", "changelog_type": "github_releases", "changelog_path": null}]
