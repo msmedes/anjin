@@ -550,4 +550,8 @@
 {"name": "flet", "github_repo": "flet-dev/flet", "changelog_type": "file", "changelog_path": "CHANGELOG.md"},
 {"name": "MLAlgorithms", "github_repo": "rushter/MLAlgorithms", "changelog_type": null, "changelog_path": null},
 {"name": "whisperX", "github_repo": "m-bain/whisperX", "changelog_type": "github_releases", "changelog_path": null},
-{"name": "social-engineer-toolkit", "github_repo": "trustedsec/social-engineer-toolkit", "changelog_type": null, "changelog_path": null}]
+{"name": "social-engineer-toolkit", "github_repo": "trustedsec/social-engineer-toolkit", "changelog_type": null, "changelog_path": null},
+{"name": "python-mastery", "github_repo": "dabeaz-course/python-mastery", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "opensnitch", "github_repo": "evilsocket/opensnitch", "changelog_type": "github_releases", "changelog_path": null},
+{"name": "chalice", "github_repo": "aws/chalice", "changelog_type": "file", "changelog_path": "CHANGELOG.md"},
+{"name": "ml-engineering", "github_repo": "stas00/ml-engineering", "changelog_type": null, "changelog_path": null}]
