@@ -1,6 +1,7 @@
 import json
 from enum import Enum
-from pydantic import BaseModel, Field, HttpUrl
+
+from pydantic import BaseModel, HttpUrl
 
 
 class ChangelogSource(Enum):
@@ -50,6 +51,3 @@ changelog_registry = load_changelog_info()
 
 def get_changelog_info(package_name: str) -> ChangelogInfo | None:
     return changelog_registry.get(package_name)
-
-
-# The rest of your existing code (ChangeLogRetrievalStatus, ChangelogRetrievalResult) remains unchanged

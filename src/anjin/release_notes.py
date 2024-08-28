@@ -19,7 +19,6 @@ from anjin.changelog_registry import (
     ChangelogRetrievalResult,
     ChangeLogRetrievalStatus,
     ChangelogSource,
-    changelog_sources,
     changelog_registry,
 )
 from anjin.config import settings
