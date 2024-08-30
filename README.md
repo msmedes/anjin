@@ -14,6 +14,3 @@ If you do not want to use the cache, you can run add the `--no-cache` | `-nc` fl
 You will need to set the OPENAI_API_KEY and GITHUB_TOKEN environment variables in a `.env` file
 
 You can mark packages to be ignored by adding `# anjin:ignore` to the dep in the requirements file.
-
-### anjin "in action"
-https://github.com/user-attachments/assets/540ecd0d-5c8b-4f3b-96da-e8db4c7c0918
