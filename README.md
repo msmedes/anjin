@@ -9,6 +9,8 @@ To run:
 
 Right now accepts absolute paths to the requirements file and codebase.
 
+If you do not want to use the cache, you can run add the `--no-cache` | `-nc` flag.
+
 You will need to set the OPENAI_API_KEY and GITHUB_TOKEN environment variables in a `.env` file
 
 You can mark packages to be ignored by adding `# anjin:ignore` to the dep in the requirements file.

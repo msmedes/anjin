@@ -187,7 +187,7 @@ async def fetch_changelog(
     cache = load_cache()
     cache_key = f"{package}_{current_version}_{latest_version}"
 
-    if cache_key in cache:
+    if settings.USE_CACHE and cache_key in cache:
         return ChangelogRetrievalResult(
             status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache[cache_key]
         )
@@ -198,8 +198,9 @@ async def fetch_changelog(
             filtered_changelog = filter_changelog_by_version(
                 changelog, current_version, latest_version
             )
-            cache[cache_key] = filtered_changelog
-            save_cache(cache)
+            if settings.USE_CACHE:
+                cache[cache_key] = filtered_changelog
+                save_cache(cache)
             return ChangelogRetrievalResult(
                 status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
             )
@@ -298,26 +299,18 @@ async def process_single_dependency(
 
     # Fetch changelog
     progress.update(
-        package_task, advance=25, description=f"[cyan]Fetching changelog for {package}"
+        package_task,
+        advance=25,
+        description=f"[cyan]{'Fetching' if not settings.USE_CACHE else 'Checking'} changelog for {package}",
     )
     changelog_result = await fetch_changelog(package, current_version, latest_version)
 
     if changelog_result.status == ChangeLogRetrievalStatus.SUCCESS:
-        if changelog_result.changelog.startswith("CACHED:"):
-            progress.update(
-                package_task,
-                advance=25,
-                description=f"[cyan]Using cached changelog for {package}",
-            )
-            changelog_result.changelog = changelog_result.changelog[
-                7:
-            ]  # Remove "CACHED:" prefix
-        else:
-            progress.update(
-                package_task,
-                advance=25,
-                description=f"[cyan]Summarizing changes for {package}",
-            )
+        progress.update(
+            package_task,
+            advance=25,
+            description=f"[cyan]Summarizing changes for {package}",
+        )
         summary = await summarize_changes(
             changelog_result.changelog, package, codebase_path, requirements_file
         )
@@ -344,9 +337,14 @@ def check_updates(
             "--debug", "-d", help="Enable debug mode, you do not need to use this"
         ),
     ] = False,
+    no_cache: Annotated[
+        bool,
+        typer.Option("--no-cache", "-nc", help="Bypass the cache and fetch fresh data"),
+    ] = False,
 ):
     async def main():
         settings.DEBUG = debug
+        settings.USE_CACHE = not no_cache
         console.print("[bold green]Parsing requirements file...[/bold green]")
         dependencies, ignored_packages = await parse_requirements(requirements_file)
 
