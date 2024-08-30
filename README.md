@@ -16,6 +16,4 @@ You will need to set the OPENAI_API_KEY and GITHUB_TOKEN environment variables i
 You can mark packages to be ignored by adding `# anjin:ignore` to the dep in the requirements file.
 
 ### anjin "in action"
-
-https://github.com/user-attachments/assets/f837de32-0a0e-4172-9c6a-d81bad04528d
-
+https://github.com/user-attachments/assets/540ecd0d-5c8b-4f3b-96da-e8db4c7c0918
