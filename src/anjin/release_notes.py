@@ -339,7 +339,10 @@ def check_updates(
         str, typer.Option("--codebase", "-c", help="Path to the codebase")
     ],
     debug: Annotated[
-        bool, typer.Option("--debug", "-d", help="Enable debug mode")
+        bool,
+        typer.Option(
+            "--debug", "-d", help="Enable debug mode, you do not need to use this"
+        ),
     ] = False,
 ):
     async def main():
