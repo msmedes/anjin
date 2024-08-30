@@ -1,14 +1,16 @@
 import ast
 import asyncio
+import json
 import os
 import re
+from pathlib import Path
 
 import httpx
 import typer
 from openai import AsyncOpenAI
 from packaging import version as pkg_version
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
 from rich.table import Table
 from typing_extensions import Annotated
 
@@ -26,25 +28,144 @@ console = Console()
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
+CACHE_DIR = Path.home() / ".anjin_cache"
+CACHE_FILE = CACHE_DIR / "changelog_cache.json"
 
-async def parse_requirements(file_path: str) -> dict:
+
+def load_cache():
+    if CACHE_FILE.exists():
+        with open(CACHE_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+
+def save_cache(cache):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(CACHE_FILE, "w") as f:
+        json.dump(cache, f)
+
+
+class PackageUsageVisitor(ast.NodeVisitor):
+    def __init__(self, package_name: str):
+        self.package_name = package_name
+        self.usages: set[tuple[int, str]] = set()
+
+    def visit_Import(self, node):
+        for alias in node.names:
+            if alias.name == self.package_name:
+                self.usages.add((node.lineno, f"Import {self.package_name}"))
+
+    def visit_ImportFrom(self, node):
+        if node.module == self.package_name:
+            imports = ", ".join(alias.name for alias in node.names)
+            self.usages.add((node.lineno, f"From {self.package_name} import {imports}"))
+
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Attribute) and isinstance(
+            node.func.value, ast.Name
+        ):
+            if node.func.value.id == self.package_name:
+                self.usages.add(
+                    (node.lineno, f"Call {self.package_name}.{node.func.attr}()")
+                )
+        elif isinstance(node.func, ast.Name) and node.func.id.startswith(
+            f"{self.package_name}."
+        ):
+            self.usages.add((node.lineno, f"Call {node.func.id}()"))
+
+
+async def get_relevant_code_snippets(
+    codebase_path: str, package_name: str, max_snippets: int = 20
+) -> list[str]:
+    snippets = []
+    unique_usages = set()
+    codebase_path = Path(codebase_path)
+
+    async def process_file(file_path: Path):
+        if file_path.suffix != ".py":
+            return
+
+        try:
+            content = await asyncio.to_thread(file_path.read_text)
+            tree = ast.parse(content)
+            visitor = PackageUsageVisitor(package_name)
+            visitor.visit(tree)
+
+            if visitor.usages:
+                lines = content.splitlines()
+                for lineno, usage_desc in visitor.usages:
+                    if usage_desc not in unique_usages:
+                        unique_usages.add(usage_desc)
+                        start = max(0, lineno - 1)
+                        end = min(len(lines), lineno + 2)
+                        snippet = (
+                            f"File: {file_path.relative_to(codebase_path)}\n{usage_desc}\n"
+                            + "\n".join(lines[start:end])
+                        )
+                        snippets.append(snippet)
+                        if len(snippets) >= max_snippets:
+                            return True  # Signal to stop processing more files
+        except Exception as e:
+            print(f"Error processing file {file_path}: {e}")
+
+        return False
+
+    async def walk_directory(directory: Path):
+        tasks = []
+        for item in directory.iterdir():
+            if item.is_file():
+                tasks.append(process_file(item))
+            elif item.is_dir() and not item.name.startswith("."):
+                tasks.append(walk_directory(item))
+
+        results = await asyncio.gather(*tasks)
+        if any(results):
+            return True  # Signal to stop processing more directories
+        return False
+
+    await walk_directory(codebase_path)
+    return snippets[:max_snippets]
+
+
+async def parse_requirements(file_path: str) -> tuple[dict, set]:
     dependencies = {}
+    ignored_packages = set()
     with open(file_path, "r") as file:
-        content = file.read()
-    for line in content.splitlines():
-        match = re.match(r"^([^=<>]+)([=<>]+)(.+)$", line.strip())
-        if match:
-            package, operator, ver = match.groups()
-            dependencies[package.strip()] = ver.strip()
-    return dependencies
+        for line in file:
+            line = line.strip()
+            if line.startswith("#"):
+                continue  # Skip full-line comments
+
+            # Split the line into the requirement and the comment
+            requirement, _, comment = line.partition("#")
+            requirement = requirement.strip()
+
+            if not requirement:
+                continue  # Skip empty lines
+
+            # Check for inline ignore comment
+            if "anjin:ignore" in comment.lower():
+                package = requirement.split("==")[0].strip()
+                ignored_packages.add(package)
+            else:
+                match = re.match(r"^([^=<>]+)([=<>]+)(.+)$", requirement)
+                if match:
+                    package, operator, ver = match.groups()
+                    package = package.strip()
+                    dependencies[package] = ver.strip()
+
+    return dependencies, ignored_packages
 
 
 async def get_latest_version(package: str) -> str:
     url = f"https://pypi.org/pypi/{package}/json"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        if response.status_code == 200:
-            return response.json()["info"]["version"]
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                return response.json()["info"]["version"]
+    except Exception as e:
+        print(f"Error fetching latest version for {package}: {str(e)}")
     return None
 
 
@@ -63,13 +184,22 @@ def filter_changelog_by_version(
 async def fetch_changelog(
     package: str, current_version: str, latest_version: str
 ) -> ChangelogRetrievalResult:
+    cache = load_cache()
+    cache_key = f"{package}_{current_version}_{latest_version}"
+
+    if cache_key in cache:
+        return ChangelogRetrievalResult(
+            status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache[cache_key]
+        )
+
     try:
         changelog = changelogs.get(package)
         if changelog:
-            # Filter changelog to only include relevant versions
             filtered_changelog = filter_changelog_by_version(
                 changelog, current_version, latest_version
             )
+            cache[cache_key] = filtered_changelog
+            save_cache(cache)
             return ChangelogRetrievalResult(
                 status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
             )
@@ -78,54 +208,6 @@ async def fetch_changelog(
     except Exception as e:
         print(f"Error fetching changelog for {package}: {str(e)}")
         return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
-
-
-def find_package_usage(file_path: str, package_name: str) -> list:
-    with open(file_path, "r") as file:
-        content = file.read()
-
-    tree = ast.parse(content)
-    usages = []
-
-    class PackageUsageVisitor(ast.NodeVisitor):
-        def visit_Import(self, node):
-            for alias in node.names:
-                if alias.name == package_name:
-                    usages.append((node.lineno, ast.get_source_segment(content, node)))
-
-        def visit_ImportFrom(self, node):
-            if node.module == package_name:
-                usages.append((node.lineno, ast.get_source_segment(content, node)))
-
-        def visit_Name(self, node):
-            if node.id == package_name:
-                usages.append((node.lineno, ast.get_source_segment(content, node)))
-
-    PackageUsageVisitor().visit(tree)
-    return usages
-
-
-async def get_relevant_code_snippets(
-    codebase_path: str, package_name: str, max_snippets: int = 5
-) -> list:
-    snippets = []
-    for root, _, files in os.walk(codebase_path):
-        for file in files:
-            if file.endswith(".py"):
-                file_path = os.path.join(root, file)
-                usages = await asyncio.to_thread(
-                    find_package_usage, file_path, package_name
-                )
-                for lineno, usage in usages:
-                    with open(file_path, "r") as f:
-                        lines = f.readlines()
-                        start = max(0, lineno - 3)
-                        end = min(len(lines), lineno + 2)
-                        snippet = "".join(lines[start:end])
-                        snippets.append(f"File: {file_path}\n{snippet}")
-                    if len(snippets) >= max_snippets:
-                        return snippets
-    return snippets
 
 
 async def summarize_changes(
@@ -181,45 +263,71 @@ async def summarize_changes(
         return "Debug mode"
 
 
-async def process_dependency(
+async def process_single_dependency(
     package: str,
     current_version: str,
     codebase_path: str,
     requirements_file: str,
     progress: Progress,
-    task_id: int,
+    overall_task: TaskID,
+    package_task: TaskID,
+    ignored_packages: set[str],
 ):
-    progress.update(task_id, advance=0, description=f"[cyan]Checking {package}...")
-    latest_version = await get_latest_version(package)
+    if package in ignored_packages:
+        progress.update(
+            package_task, completed=100, description=f"[yellow]Ignored {package}"
+        )
+        progress.update(overall_task, advance=1)
+        return None
 
-    if latest_version and pkg_version.parse(latest_version) > pkg_version.parse(
+    progress.update(package_task, advance=0, description=f"[cyan]Processing {package}")
+
+    # Get latest version
+    latest_version = await get_latest_version(package)
+    progress.update(
+        package_task, advance=25, description=f"[cyan]Checking version for {package}"
+    )
+    if not latest_version or pkg_version.parse(latest_version) <= pkg_version.parse(
         current_version
     ):
         progress.update(
-            task_id, advance=0, description=f"[cyan]Fetching changelog for {package}..."
+            package_task, advance=75, description=f"[yellow]{package} is up to date"
         )
-        changelog_result = await fetch_changelog(
-            package, current_version, latest_version
-        )
-
-        if changelog_result.status == ChangeLogRetrievalStatus.SUCCESS:
-            progress.update(
-                task_id,
-                advance=0,
-                description=f"[cyan]Summarizing changes for {package}...",
-            )
-            summary = await summarize_changes(
-                changelog_result.changelog, package, codebase_path, requirements_file
-            )
-            changelog_result.summary = summary
-
-        progress.update(task_id, advance=1, description=f"[green]Completed {package}")
-        return package, current_version, latest_version, changelog_result
-    else:
-        progress.update(
-            task_id, advance=1, description=f"[yellow]{package} is up to date"
-        )
+        progress.update(overall_task, advance=1)
         return None
+
+    # Fetch changelog
+    progress.update(
+        package_task, advance=25, description=f"[cyan]Fetching changelog for {package}"
+    )
+    changelog_result = await fetch_changelog(package, current_version, latest_version)
+
+    if changelog_result.status == ChangeLogRetrievalStatus.SUCCESS:
+        if changelog_result.changelog.startswith("CACHED:"):
+            progress.update(
+                package_task,
+                advance=25,
+                description=f"[cyan]Using cached changelog for {package}",
+            )
+            changelog_result.changelog = changelog_result.changelog[
+                7:
+            ]  # Remove "CACHED:" prefix
+        else:
+            progress.update(
+                package_task,
+                advance=25,
+                description=f"[cyan]Summarizing changes for {package}",
+            )
+        summary = await summarize_changes(
+            changelog_result.changelog, package, codebase_path, requirements_file
+        )
+        changelog_result.summary = summary
+
+    progress.update(
+        package_task, completed=100, description=f"[green]Completed {package}"
+    )
+    progress.update(overall_task, advance=1)
+    return package, current_version, latest_version, changelog_result
 
 
 @app.command()
@@ -237,25 +345,40 @@ def check_updates(
     async def main():
         settings.DEBUG = debug
         console.print("[bold green]Parsing requirements file...[/bold green]")
-        dependencies = await parse_requirements(requirements_file)
-        console.print(f"[bold]Found {len(dependencies)} dependencies.[/bold]")
+        dependencies, ignored_packages = await parse_requirements(requirements_file)
+
+        console.print(f"[bold]Found {len(dependencies)} dependencies to check.[/bold]")
+        if ignored_packages:
+            console.print(
+                f"[bold yellow]Ignoring {len(ignored_packages)} packages.[/bold yellow]"
+            )
 
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=console,
+            expand=True,
         ) as progress:
             overall_task = progress.add_task(
-                "[cyan]Processing dependencies...", total=len(dependencies)
+                "[cyan]Overall progress", total=len(dependencies)
             )
+            package_tasks = {
+                package: progress.add_task(f"[cyan]{package}", total=100, start=False)
+                for package in dependencies.keys()
+            }
+
             tasks = [
-                process_dependency(
+                process_single_dependency(
                     package,
                     current_version,
                     codebase_path,
                     requirements_file,
                     progress,
                     overall_task,
+                    package_tasks[package],
+                    ignored_packages,
                 )
                 for package, current_version in dependencies.items()
             ]
