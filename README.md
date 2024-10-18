@@ -15,3 +15,4 @@ You will need to set the OPENAI_API_KEY and GITHUB_TOKEN environment variables i
 
 You can mark packages to be ignored by adding `# anjin:ignore` to the dep in the requirements file.
 
+By default, the output will be saved to `dependency_updates.html`. You can set this path with the `-o` flag. I have included an example `dependency_updates.html` in the repo.
