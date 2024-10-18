@@ -89,13 +89,12 @@ async def fetch_changelog(
         if changelog_cache.contains(package, current_version, latest_version):
             print(f"Using cached changelog for {package}")
             cache = changelog_cache.get(package, current_version, latest_version)
-            cache_key = f"{package}_{current_version}_{latest_version}"
             return ChangelogRetrievalResult(
-                status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache[cache_key]
+                status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache
             )
 
     try:
-        print("Not using cache for changelog for {package}")
+        print(f"Not using cache for changelog for {package}")
         changelog = changelogs.get(package)
         if changelog:
             filtered_changelog = filter_changelog_by_version(

@@ -5,19 +5,6 @@ from anjin.config import settings
 from anjin.get_snippets import get_relevant_code_snippets
 
 
-class OpenAiClient:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(OpenAiClient, cls).__new__(cls)
-            cls._instance.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        return cls._instance
-
-    def __init__(self):
-        pass
-
-
 async def summarize_changes(
     changelog: str, package: str, codebase_path: str, requirements_file: str
 ) -> str:
@@ -55,8 +42,8 @@ async def summarize_changes(
     """
 
     if not settings.DEBUG:
-        client = OpenAiClient()
-        response = await client.client.chat.completions.create(
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
