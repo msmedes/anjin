@@ -1,639 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
 
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dependency Updates</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-            h1 { color: #333; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
-            .status-SUCCESS { color: green; }
-            .status-FAILURE, .status-NOT_FOUND { color: red; }
-        </style>
-    </head>
-    <body>
-        <h1>Dependency Updates</h1>
-        <table>
-            <tr>
-                <th>Package</th>
-                <th>Current Version</th>
-                <th>Latest Version</th>
-                <th>Status</th>
-                <th>Summary</th>
-            </tr>
-    
-            <tr>
-                <td>aiohappyeyeballs</td>
-                <td>2.4.0</td>
-                <td>2.4.3</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **2.4.3 Changes:**
-  - `staggered_race` has been rewritten to be race-safe, which may affect how concurrent tasks are handled in your code if using this functionality.
-  - Runtime errors raised by `uvloop` during connection attempts will now be re-raised, enhancing error visibility and handling in your async operations.
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dependency Updates</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
 
-- **2.4.2 Change:**
-  - The `staggered` functionality for Python 3.12+ has been aligned with the standard library. This might affect compatibility and usage in the relevant version of Python.
+    h1 {
+      color: #333;
+    }
 
-- **2.4.1 Change:**
-  - Avoiding passing the loop to `staggered.staggered_race` could change how event loops are managed in your implementations.</td>
-            </tr>
-            
-            <tr>
-                <td>aiohttp</td>
-                <td>3.10.5</td>
-                <td>3.10.10</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Exception**: Introduced `aiohttp.ClientConnectorDNSError` to differentiate DNS resolution errors. This could help handle DNS-related issues more effectively in your code.
-  
-- **Parameter Widening**: The `trace_request_ctx` parameter in `ClientSession.request()` has been widened, potentially allowing for more flexible request tracing.
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
 
-- **Default Timeout Change**: The default `ClientTimeout` now includes a `sock_connect` timeout of 30 seconds. If your code relies on establishing connections, this change could impact connection behavior and error handling.
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
 
-- **Removal of Middleware Method**: The removal of `set_current_app` from `UrlMappingMatchInfo` may affect any custom middleware relying on this method, as it was likely not used elsewhere.
+    th {
+      background-color: #f2f2f2;
+    }
 
-- **yarl Version Requirement**: Minimum `yarl` version is now 1.12.0. If your project uses an older version, it may need upgrading.
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>alembic</td>
-                <td>1.13.2</td>
-                <td>1.13.3</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>anyio</td>
-                <td>4.4.0</td>
-                <td>4.6.2.post1</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Dropped Python 3.8 Support**: If your codebase needs to support Python 3.8, you will need to refactor to a compatible version.
-  
-- **TaskGroup and CancelScope Error Handling**: Improved error handling when raising exceptions in task groups and cancel scopes, which may affect task execution and error tracing in your asynchronous operations.
+    .status-SUCCESS {
+      color: green;
+    }
 
-- **Parametrized Async fixtures**: Regression fix for using parametrized async fixtures, which may impact any test cases you have that utilize these fixtures.
+    .status-FAILURE,
+    .status-NOT_FOUND {
+      color: red;
+    }
+  </style>
+</head>
 
-- **Performance Improvements**: Significant performance upgrades were made to `anyio.Lock` and `anyio.Semaphore`, potentially improving your codebase's async locking mechanisms.
+<body>
+  <h1>Dependency Updates</h1>
+  <table>
+    <tr>
+      <th>Package</th>
+      <th>Current Version</th>
+      <th>Latest Version</th>
+      <th>Status</th>
+      <th>Summary</th>
+    </tr>
 
-- **New Parameters for Process Functions**: Added more keyword arguments in `run_process()` and `open_process()`, providing enhanced functionality for process management.
+    <tr>
+      <td>aiohappyeyeballs</td>
+      <td>2.4.0</td>
+      <td>2.4.3</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **2.4.3 Changes:**
+        - `staggered_race` has been rewritten to be race-safe, which may affect how concurrent tasks are handled in your
+        code if using this functionality.
+        - Runtime errors raised by `uvloop` during connection attempts will now be re-raised, enhancing error visibility
+        and handling in your async operations.
 
-- **Updated Path Methods**: New methods added to `anyio.Path`, particularly useful if your code deals with file or path manipulations in Python 3.13 or later.
+        - **2.4.2 Change:**
+        - The `staggered` functionality for Python 3.12+ has been aligned with the standard library. This might affect
+        compatibility and usage in the relevant version of Python.
 
-These changes could affect testing, async task execution, locking mechanisms, and process management functionality in your codebase.</td>
-            </tr>
-            
-            <tr>
-                <td>cffi</td>
-                <td>1.17.0</td>
-                <td>1.17.1</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>charset-normalizer</td>
-                <td>3.3.2</td>
-                <td>3.4.0</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>cryptography</td>
-                <td>43.0.1</td>
-                <td>43.0.3</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Version Update**: The codebase is currently using `cryptography` version `43.0.1`, and the latest version is `43.0.3`. 
-- **API Changes**: There are no new features or significant API changes in versions `43.0.2` or `43.0.3` that impact current functionalities.
-- **Deprecations/Breaking Changes**: None noted in these versions.
-- **Important Fixes**: 
-  - Version `43.0.2` fixed compilation issues with `LibreSSL 4.0.0`. If the codebase utilizes this version of `LibreSSL`, a version update may be necessary.
+        - **2.4.1 Change:**
+        - Avoiding passing the loop to `staggered.staggered_race` could change how event loops are managed in your
+        implementations.</td>
+    </tr>
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>dnspython</td>
-                <td>2.6.1</td>
-                <td>2.7.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Minimum Python Version**: The minimum supported version of Python is now 3.9. Ensure the codebase is compatible with this requirement.
-- **Version Upgrade**: Current version of `dnspython` is 2.6.1; consider upgrading to 2.7.0 to incorporate improvements or new features mentioned in the release notes. 
+    <tr>
+      <td>aiohttp</td>
+      <td>3.10.5</td>
+      <td>3.10.10</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Exception**: Introduced `aiohttp.ClientConnectorDNSError` to differentiate DNS resolution errors. This
+        could help handle DNS-related issues more effectively in your code.
 
-No breaking changes, deprecations, or API alterations were noted that would impact the existing functionality directly.</td>
-            </tr>
-            
-            <tr>
-                <td>fastapi</td>
-                <td>0.112.2</td>
-                <td>0.115.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Pydantic Model Support for Parameters**: 
-  - New ability to declare `Query`, `Header`, and `Cookie` parameters using Pydantic models. This may enhance existing route definitions in `api/routes/` (e.g., `patient_note.py`, `message.py`) to utilize Pydantic's validation and serialization features, making the codebase cleaner and more robust.
-  
-- **Forbid Extra Parameters**:
-  - Pydantic models can be configured to forbid extra parameters in `Query`, `Header`, and `Cookie` requests using `model_config = {"extra": "forbid"}`. This can improve validation in various routes, enhancing security and data integrity when handling request parameters.
+        - **Parameter Widening**: The `trace_request_ctx` parameter in `ClientSession.request()` has been widened,
+        potentially allowing for more flexible request tracing.
 
-- **OpenAPI Response Generation Fix**: 
-  - A fix related to OpenAPI generation for responses could impact how your API documentation is generated and displayed, potentially influencing integrations that rely on auto-generated OpenAPI specs.
+        - **Default Timeout Change**: The default `ClientTimeout` now includes a `sock_connect` timeout of 30 seconds.
+        If your code relies on establishing connections, this change could impact connection behavior and error
+        handling.
 
-- **Type Annotations Improvement**:
-  - Updated type annotations for `python-multipart`, which could affect file upload implementations. It may be worth testing existing file handling routes to ensure they continue functioning as expected.
+        - **Removal of Middleware Method**: The removal of `set_current_app` from `UrlMappingMatchInfo` may affect any
+        custom middleware relying on this method, as it was likely not used elsewhere.
 
-- **Starlette Upgrade**: 
-  - Compatibility with Starlette has been established for versions `>=0.37.2,<0.41.0`. Ensure that your implementation continues to work smoothly with this dependency, especially if using features reliant on Starlette.
+        - **yarl Version Requirement**: Minimum `yarl` version is now 1.12.0. If your project uses an older version, it
+        may need upgrading.
 
-These changes introduce new features and potential improvements in API design and validation that can be leveraged in the existing codebase.</td>
-            </tr>
-            
-            <tr>
-                <td>google-api-core</td>
-                <td>2.19.2</td>
-                <td>2.21.0</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>google-api-python-client</td>
-                <td>2.143.0</td>
-                <td>2.149.0</td>
-                <td class="status-FAILURE">FAILURE</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>google-auth</td>
-                <td>2.34.0</td>
-                <td>2.35.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes**: The latest version of `google-auth` may introduce new methods or change existing ones. Review the official documentation to validate any necessary adjustments in your integration points.
-- **Deprecations**: Check for any deprecated features that your codebase might rely on; these could affect future maintainability.
-- **New Features**: If new authentication methods or mechanisms have been introduced, consider implementing them for improved functionality.
+        No relevant changes.</td>
+    </tr>
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>google-cloud-logging</td>
-                <td>3.11.2</td>
-                <td>3.11.3</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>grpcio</td>
-                <td>1.66.1</td>
-                <td>1.67.0</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>grpcio-status</td>
-                <td>1.66.1</td>
-                <td>1.67.0</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>httpcore</td>
-                <td>1.0.5</td>
-                <td>1.0.6</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- Relaxation of the `trio` dependency pinning allows for greater flexibility in upgrading the `trio` library, which may benefit future compatibility with async features.
-- Handling of `trio` raising `NotImplementedError` enhances stability on unsupported platforms, reducing potential issues during execution.
-- Improved mapping of `ssl.SSLError` to `httpcore.ConnectError` could affect error handling in the codebase, making it easier to manage SSL-related connection errors.
+    <tr>
+      <td>alembic</td>
+      <td>1.13.2</td>
+      <td>1.13.3</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-These changes are likely relevant as they may improve compatibility and error management within the async operations of the codebase.</td>
-            </tr>
-            
-            <tr>
-                <td>httptools</td>
-                <td>0.6.1</td>
-                <td>0.6.4</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Version Bump to 0.6.4**: New version includes Cython source files in the source distribution, potentially improving build compatibility.
-- **Version Bump to 0.6.3**: 
-  - Bundled library updated to fix a security vulnerability (CVE-2024-27982), which should be noted if your codebase models depend on that feature.
-- **Version Bump to 0.6.2**: Fixed issues with building and running tests on Python 3.13; may affect deployment or compatibility if the codebase targets this Python version.
+    <tr>
+      <td>anyio</td>
+      <td>4.4.0</td>
+      <td>4.6.2.post1</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Dropped Python 3.8 Support**: If your codebase needs to support Python 3.8, you will need to refactor to a
+        compatible version.
 
-These changes are relevant if your project relies on the features or functions of `httptools` for handling HTTP parsing/manipulation.</td>
-            </tr>
-            
-            <tr>
-                <td>idna</td>
-                <td>3.8</td>
-                <td>3.10</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Unicode Updates**: 
-  - Version 3.9 updates to Unicode 16.0.0, while 3.10 reverts to Unicode 15.1.0. This might affect any validation or processing logic in the codebase that relies on specific Unicode handling, particularly with UTS46 processing.
+        - **TaskGroup and CancelScope Error Handling**: Improved error handling when raising exceptions in task groups
+        and cancel scopes, which may affect task execution and error tracing in your asynchronous operations.
 
-- **Deprecation of setup.cfg**: 
-  - In version 3.9, `setup.cfg` is deprecated in favor of `pyproject.toml`. If the project relies on `setup.cfg` for configuration, this should be updated to maintain compatibility with future versions.
+        - **Parametrized Async fixtures**: Regression fix for using parametrized async fixtures, which may impact any
+        test cases you have that utilize these fixtures.
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>importlib-metadata</td>
-                <td>8.4.0</td>
-                <td>8.5.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Features:** No significant new features relevant to the codebase have been introduced in the latest version of `importlib-metadata`.
-- **API Changes:** No API changes that impact existing functionality or usage are noted.
-- **Deprecations:** There are no deprecations that affect the current setups or functionality.
-- **Breaking Changes:** No breaking changes present that would disrupt the use of `importlib-metadata` in the codebase.
+        - **Performance Improvements**: Significant performance upgrades were made to `anyio.Lock` and
+        `anyio.Semaphore`, potentially improving your codebase's async locking mechanisms.
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>markupsafe</td>
-                <td>2.1.5</td>
-                <td>3.0.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Breaking Change**: Version 3.0.0 drops support for Python 3.7 and 3.8. Ensure your codebase is compatible with newer Python versions.
-- **API Change**: `__version__` attribute is deprecated; use `importlib.metadata.version("markupsafe")` instead. Update code accordingly to avoid using `__version__`.
-- **API Change**: Some `str` methods on `Markup` (like `strip`, `replace`) no longer escape their arguments. Review how these methods are utilized in your code to avoid unintended behavior.
-- **New Feature**: Added support for Python 3.13 and its experimental free-threaded build. Consider testing your code with this version if you plan to utilize it.
-- **Dependency Change**: Requires `setuptools >= 70.1`. Ensure your environment uses a compatible version to avoid build issues.</td>
-            </tr>
-            
-            <tr>
-                <td>multidict</td>
-                <td>6.0.5</td>
-                <td>6.1.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Support for Python 3.13**: If your codebase targets this Python version, you'll now be able to use it with `multidict`.
-  
-- **Removal of Python 3.7 support**: If your project still supports Python 3.7, you may face compatibility issues after upgrading to `multidict` 6.1.0.</td>
-            </tr>
-            
-            <tr>
-                <td>numpy</td>
-                <td>2.1.1</td>
-                <td>2.1.2</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>phonenumbers</td>
-                <td>8.13.44</td>
-                <td>8.13.47</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes**: 
-  - The `phonenumbers` library has undergone internal changes, specifically:
-    - Changing several `std::string` parameters to `absl::string_view`, which may affect performance but is unlikely to impact existing function calls.
-    
-- **Metadata Updates**: 
-  - Phone metadata and geocoding data have been updated for multiple regions, which could improve parsing accuracy but does not represent breaking changes.
+        - **New Parameters for Process Functions**: Added more keyword arguments in `run_process()` and
+        `open_process()`, providing enhanced functionality for process management.
 
-No breaking changes, deprecations, or new relevant features were noted that would directly impact the current codebase usage of `phonenumbers.parse()` or `phonenumbers.format_number()`.</td>
-            </tr>
-            
-            <tr>
-                <td>protobuf</td>
-                <td>5.28.0</td>
-                <td>5.28.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Breaking Changes**: Version 5.28.0 has several breaking changes, primarily affecting the serialization and deserialization of messages. Changes to `proto`, `service`, and `field` reflection may require updates in how messages are defined and instantiated.
-  
-- **API Changes**: Several previously deprecated methods have been removed, requiring developers to migrate to preferred alternatives.
-  
-- **New Features**: Introduced new features related to the `json_format` module, improving JSON serialization/deserialization compatibility.
+        - **Updated Path Methods**: New methods added to `anyio.Path`, particularly useful if your code deals with file
+        or path manipulations in Python 3.13 or later.
 
-- **Performance Improvements**: Enhancements in serialization speed and efficiency may benefit applications heavily relying on message processing.
+        These changes could affect testing, async task execution, locking mechanisms, and process management
+        functionality in your codebase.</td>
+    </tr>
 
-- **Deprecations**: Certain functions related to field behavior are now deprecated, advising migration to the new methods or patterns for future compatibility.
+    <tr>
+      <td>cffi</td>
+      <td>1.17.0</td>
+      <td>1.17.1</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-These changes likely require updates to how Protobuf messages are interacted with in your codebase, especially in areas dealing with message creation and serialization.</td>
-            </tr>
-            
-            <tr>
-                <td>pyasn1</td>
-                <td>0.6.0</td>
-                <td>0.6.1</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>pyasn1-modules</td>
-                <td>0.4.0</td>
-                <td>0.4.1</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes**: None specified that directly impact functionality.
-- **New Features**: No new features relevant to existing functionality.
-- **Deprecations**: No deprecations noted.
-- **Breaking Changes**: No breaking changes mentioned.
+    <tr>
+      <td>charset-normalizer</td>
+      <td>3.3.2</td>
+      <td>3.4.0</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>pydantic</td>
-                <td>2.8.2</td>
-                <td>2.9.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Breaking Change**: Merged `dict` type `json_schema_extra`, which may affect how JSON schema is generated if the code relies on specific custom JSON schema behavior.
-- **Deprecation**: Passing a dict to the `Examples` class is now deprecated. Code that uses this feature will need to be updated.
-- **New Feature**: Added support for `ZoneInfo`, which could impact datetime-related functionalities.
-- **New Feature**: Added `Config.val_json_bytes`, which might affect configurations related to JSON serialization if utilized.
-- **Changes to Validators and Models**:
-  - Validators now show a warning when they do not return `self`, which may require adjustments to custom validators in the codebase.
-  - Added support for `complex` numbers, which could be useful if any fields in models deal with complex types.
-- **Field Validators**: Enhancements and changes to field validators, including how tagged unions are serialized, which could affect data validation across models.
-- **Serialization Improvements**: Various fixes related to schema generation and serialization for fields using plain validators, potentially impacting how data is serialized and validated.
+    <tr>
+      <td>cryptography</td>
+      <td>43.0.1</td>
+      <td>43.0.3</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Version Update**: The codebase is currently using `cryptography` version `43.0.1`, and the latest version
+        is `43.0.3`.
+        - **API Changes**: There are no new features or significant API changes in versions `43.0.2` or `43.0.3` that
+        impact current functionalities.
+        - **Deprecations/Breaking Changes**: None noted in these versions.
+        - **Important Fixes**:
+        - Version `43.0.2` fixed compilation issues with `LibreSSL 4.0.0`. If the codebase utilizes this version of
+        `LibreSSL`, a version update may be necessary.
 
-Consider reviewing and testing any custom validation or JSON schema generation logic in the codebase due to the breaking changes and enhancements noted.</td>
-            </tr>
-            
-            <tr>
-                <td>pydantic-core</td>
-                <td>2.20.1</td>
-                <td>2.24.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Version Upgrade**: pydantic-core updated from 2.20.1 to 2.24.2.
-- **New Features**:
-  - Added `serialization` key to `InvalidSchema`, which could help developers diagnose serialization issues in schemas.
-  - Introduced milliseconds option to `ser_json_timedelta`, enhancing datetime serialization capabilities.
-  - Support for unpacked `TypedDict` in `ArgumentsValidator`, which may affect function signatures when dealing with keyword arguments.
-- **Breaking Changes**: 
-  - Changed `metadata` type hint from `Any` to `Dict[str, Any] | None`, requiring updates in any custom type hints within schemas.
-- **Error Handling Enhancements**: 
-  - Relaxed error handling for `issubclass` and `isinstance` schemas, resulting in improved validation performance and better handling of certain input types.
-  
-These changes are likely notable for any code interacting with pydantic schemas, especially in serialization or validation scenarios.</td>
-            </tr>
-            
-            <tr>
-                <td>pydantic-settings</td>
-                <td>2.4.0</td>
-                <td>2.6.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Config Options**: 
-  - Added `cli_ignore_unknown_args` to handle unknown CLI arguments.
-  - Added `cli_flag_prefix_char` for specifying a prefix character for CLI flags.
+        No relevant changes.</td>
+    </tr>
 
-- **CLI App Support**: Introduction of CLI App Support, potentially enhancing command-line interactions.
+    <tr>
+      <td>dnspython</td>
+      <td>2.6.1</td>
+      <td>2.7.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Minimum Python Version**: The minimum supported version of Python is now 3.9. Ensure the codebase is
+        compatible with this requirement.
+        - **Version Upgrade**: Current version of `dnspython` is 2.6.1; consider upgrading to 2.7.0 to incorporate
+        improvements or new features mentioned in the release notes.
 
-- **Field Management**:
-  - Added functionality to suppress fields from CLI help, allowing for better control over exposed arguments.
+        No breaking changes, deprecations, or API alterations were noted that would impact the existing functionality
+        directly.</td>
+    </tr>
 
-- **Bug Fixes**:
-  - Fixed issues related to nested model validation and alias handling, which may improve data validation reliability in the codebase where nested models are utilized.
+    <tr>
+      <td>fastapi</td>
+      <td>0.112.2</td>
+      <td>0.115.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Pydantic Model Support for Parameters**:
+        - New ability to declare `Query`, `Header`, and `Cookie` parameters using Pydantic models. This may enhance
+        existing route definitions in `api/routes/` (e.g., `patient_note.py`, `message.py`) to utilize Pydantic's
+        validation and serialization features, making the codebase cleaner and more robust.
 
-- **Documentation Update**: 
-  - Enhanced examples and documentation around nested model partial updates, which can help in better understanding and implementation in existing code.
+        - **Forbid Extra Parameters**:
+        - Pydantic models can be configured to forbid extra parameters in `Query`, `Header`, and `Cookie` requests using
+        `model_config = {"extra": "forbid"}`. This can improve validation in various routes, enhancing security and data
+        integrity when handling request parameters.
 
-These changes are relevant as they can directly impact the configurations, CLI interactions, and data validation processes in your codebase.</td>
-            </tr>
-            
-            <tr>
-                <td>pyparsing</td>
-                <td>3.1.4</td>
-                <td>3.2.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes**:
-  - Discontinued support for Python 3.6, 3.7, and 3.8, meaning this package will require at least Python 3.9.
-  - Exception message format can now be customized by overriding `ParseBaseException.format_message`, which could change how exceptions are presented in the codebase.
+        - **OpenAPI Response Generation Fix**:
+        - A fix related to OpenAPI generation for responses could impact how your API documentation is generated and
+        displayed, potentially influencing integrations that rely on auto-generated OpenAPI specs.
 
-- **Possible Breaking Changes**:
-  - Improvements in exception handling may result in changes to raised exceptions or their messages, especially if your code relies on specific `ParseException` messages.
-  - Changes to `transform_string()` could affect output if your code relies on whitespace being preserved.
-  - `IndexError`s from parse actions will now propagate correctly, which might necessitate code adjustments if you catch and handle these exceptions.
+        - **Type Annotations Improvement**:
+        - Updated type annotations for `python-multipart`, which could affect file upload implementations. It may be
+        worth testing existing file handling routes to ensure they continue functioning as expected.
 
-- **New Features**:
-  - Added type annotations in the package for improved type checking, which might affect type hints in your codebase if you rely on type checking.
-  - The `QuotedString` class can now translate various escape sequences, which could impact string parsing if used extensively in your code.
+        - **Starlette Upgrade**:
+        - Compatibility with Starlette has been established for versions `>=0.37.2,<0.41.0`. Ensure that your
+          implementation continues to work smoothly with this dependency, especially if using features reliant on
+          Starlette. These changes introduce new features and potential improvements in API design and validation that
+          can be leveraged in the existing codebase.</td>
+    </tr>
 
-Overall, the changes could require code adjustments regarding exception handling and parsing behavior, especially in areas where exceptions, message formats, and input string transformations are critical.</td>
-            </tr>
-            
-            <tr>
-                <td>python-multipart</td>
-                <td>0.0.9</td>
-                <td>0.0.12</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes:**
-  - Support for `on_header_begin` was added, which may impact how headers are processed during multipart processing.
-  
-- **Type Hint Improvements:**
-  - Enhanced type hints across various components, including `FormParser` and `File`. If the codebase relies on type hints for development or library interactions, these improvements may be beneficial.
+    <tr>
+      <td>google-api-core</td>
+      <td>2.19.2</td>
+      <td>2.21.0</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-- **Header Handling Updates:**
-  - Fixed issues with allowing invalid CRLF in header names and addressed headers being incorrectly carried between parts. This could affect the reliability and correctness of header handling in multipart data.
+    <tr>
+      <td>google-api-python-client</td>
+      <td>2.143.0</td>
+      <td>2.149.0</td>
+      <td class="status-FAILURE">FAILURE</td>
+      <td>N/A</td>
+    </tr>
 
-No relevant changes regarding deprecations or breaking changes.</td>
-            </tr>
-            
-            <tr>
-                <td>rich</td>
-                <td>13.8.0</td>
-                <td>13.9.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>secure</td>
-                <td>0.3.0</td>
-                <td>1.0.1</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Breaking Changes**: Full redesign of the `secure.py` library with modern Python (3.10+) support and a major API overhaul; existing code may require adjustments to integrate new API structure.
-  
-- **New Features**:
-  - Enhanced integration with FastAPI and support for asynchronous frameworks; beneficial for existing `FastAPI` usage in the codebase.
-  - Added type hints and better type annotations; improves readability and developer experience, especially for teams using static type checking.
-  - Refined default security headers; improves overall web protection, which may enhance security posture in the application.
+    <tr>
+      <td>google-auth</td>
+      <td>2.34.0</td>
+      <td>2.35.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes**: The latest version of `google-auth` may introduce new methods or change existing ones.
+        Review the official documentation to validate any necessary adjustments in your integration points.
+        - **Deprecations**: Check for any deprecated features that your codebase might rely on; these could affect
+        future maintainability.
+        - **New Features**: If new authentication methods or mechanisms have been introduced, consider implementing them
+        for improved functionality.
 
-- **Performance Improvements**: `Secure.set_headers` performance has been enhanced, which could lead to more efficient header management in web responses. 
+        No relevant changes.</td>
+    </tr>
 
-Consider reviewing and possibly refactoring code based on the breaking changes and the new API structure to leverage performance and security enhancements effectively.</td>
-            </tr>
-            
-            <tr>
-                <td>sentry-sdk</td>
-                <td>2.13.0</td>
-                <td>2.17.0</td>
-                <td class="status-NOT_FOUND">NOT_FOUND</td>
-                <td>N/A</td>
-            </tr>
-            
-            <tr>
-                <td>setuptools</td>
-                <td>74.1.2</td>
-                <td>75.2.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Explicit Error Messaging**: Improved error messages for incorrect `Distribution` data types (expected `tuple[str, ...] | list[str]`). This may help developers understand issues when specifying distribution attributes.
-- **Deprecation of `bdist_wheel.universal`**: If your codebase uses universal wheels for packaging, this setting is deprecated and should be removed to avoid future issues.
-- **Removal of `upload_docs` Command**: If documentation uploading was part of your workflow, this command is no longer available.
-- **Changes in Distribution Logic**: Adjustments to how `.dist-info` directories are handled during wheel creation may affect custom build logic or workflows. 
+    <tr>
+      <td>google-cloud-logging</td>
+      <td>3.11.2</td>
+      <td>3.11.3</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-These changes could necessitate updates in your packaging and distribution practices depending on your usage of these features.</td>
-            </tr>
-            
-            <tr>
-                <td>sqlalchemy</td>
-                <td>2.0.34</td>
-                <td>2.0.36</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Parameter in ORM**: Introduced `hash` parameter for `mapped_column`, which could enhance ORM Native Dataclasses approach in your models.
-- **Behavior on Update**: Columns with `onupdate` or `server_onupdate` now refresh correctly during ORM UPDATE operations, benefiting existing model behaviors when updates are made in your CRUD operations.
-- **Improved Return Handling**: Fixed bugs related to ORM behaviors with `RETURNING` clauses in DML statements, enhancing the reliability of data manipulation in `AsyncSession` contexts.
-- **JSON/JSONB Bind Casts**: Added consistent "bind cast" for PostgreSQL JSON types, ensuring better type handling which is useful if your models involve JSON fields.
-- **Improved Error Messaging**: Improved error messaging for dataclass mappings, aiding in debugging and ensuring proper usage in your ORM configurations.
-- **Fixed Reflection for MySQL**: Optimizations for reflecting foreign keys in MySQL, which may streamline the management of relations in your models.
+    <tr>
+      <td>grpcio</td>
+      <td>1.66.1</td>
+      <td>1.67.0</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-These changes could significantly impact data manipulation, ORM configurations, and performance optimizations in your codebase.</td>
-            </tr>
-            
-            <tr>
-                <td>starlette</td>
-                <td>0.38.4</td>
-                <td>0.41.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Version 0.41.0**: 
-  - Addition of the ability to raise `HTTPException` before `websocket.accept()`, which could impact how exceptions are handled in WebSocket connections.
+    <tr>
+      <td>grpcio-status</td>
+      <td>1.66.1</td>
+      <td>1.67.0</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
 
-- **Version 0.40.0**: 
-  - Security fix for Denial of Service (DoS) via `multipart/form-data` requests, including an addition of `max_part_size` to `MultiPartParser`. Relevant if handling file uploads in your application.
+    <tr>
+      <td>httpcore</td>
+      <td>1.0.5</td>
+      <td>1.0.6</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- Relaxation of the `trio` dependency pinning allows for greater flexibility in upgrading the `trio` library,
+        which may benefit future compatibility with async features.
+        - Handling of `trio` raising `NotImplementedError` enhances stability on unsupported platforms, reducing
+        potential issues during execution.
+        - Improved mapping of `ssl.SSLError` to `httpcore.ConnectError` could affect error handling in the codebase,
+        making it easier to manage SSL-related connection errors.
 
-- **Version 0.39.2**: 
-  - Enhancement allowing use of `request.url_for` when only "app" scope is available, potentially helpful if the application involves route generation.
+        These changes are likely relevant as they may improve compatibility and error management within the async
+        operations of the codebase.</td>
+    </tr>
 
-- **Version 0.39.0**: 
-  - Introduction of support for HTTP Range in `FileResponse`, which may be important if serving files or handling range requests.
+    <tr>
+      <td>httptools</td>
+      <td>0.6.1</td>
+      <td>0.6.4</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Version Bump to 0.6.4**: New version includes Cython source files in the source distribution, potentially
+        improving build compatibility.
+        - **Version Bump to 0.6.3**:
+        - Bundled library updated to fix a security vulnerability (CVE-2024-27982), which should be noted if your
+        codebase models depend on that feature.
+        - **Version Bump to 0.6.2**: Fixed issues with building and running tests on Python 3.13; may affect deployment
+        or compatibility if the codebase targets this Python version.
+
+        These changes are relevant if your project relies on the features or functions of `httptools` for handling HTTP
+        parsing/manipulation.</td>
+    </tr>
+
+    <tr>
+      <td>idna</td>
+      <td>3.8</td>
+      <td>3.10</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Unicode Updates**:
+        - Version 3.9 updates to Unicode 16.0.0, while 3.10 reverts to Unicode 15.1.0. This might affect any validation
+        or processing logic in the codebase that relies on specific Unicode handling, particularly with UTS46
+        processing.
+
+        - **Deprecation of setup.cfg**:
+        - In version 3.9, `setup.cfg` is deprecated in favor of `pyproject.toml`. If the project relies on `setup.cfg`
+        for configuration, this should be updated to maintain compatibility with future versions.
+
+        No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>importlib-metadata</td>
+      <td>8.4.0</td>
+      <td>8.5.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Features:** No significant new features relevant to the codebase have been introduced in the latest
+        version of `importlib-metadata`.
+        - **API Changes:** No API changes that impact existing functionality or usage are noted.
+        - **Deprecations:** There are no deprecations that affect the current setups or functionality.
+        - **Breaking Changes:** No breaking changes present that would disrupt the use of `importlib-metadata` in the
+        codebase.
+
+        No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>markupsafe</td>
+      <td>2.1.5</td>
+      <td>3.0.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Breaking Change**: Version 3.0.0 drops support for Python 3.7 and 3.8. Ensure your codebase is compatible
+        with newer Python versions.
+        - **API Change**: `__version__` attribute is deprecated; use `importlib.metadata.version("markupsafe")` instead.
+        Update code accordingly to avoid using `__version__`.
+        - **API Change**: Some `str` methods on `Markup` (like `strip`, `replace`) no longer escape their arguments.
+        Review how these methods are utilized in your code to avoid unintended behavior.
+        - **New Feature**: Added support for Python 3.13 and its experimental free-threaded build. Consider testing your
+        code with this version if you plan to utilize it.
+        - **Dependency Change**: Requires `setuptools >= 70.1`. Ensure your environment uses a compatible version to
+        avoid build issues.</td>
+    </tr>
+
+    <tr>
+      <td>multidict</td>
+      <td>6.0.5</td>
+      <td>6.1.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Support for Python 3.13**: If your codebase targets this Python version, you'll now be able to use it with
+        `multidict`.
+
+        - **Removal of Python 3.7 support**: If your project still supports Python 3.7, you may face compatibility
+        issues after upgrading to `multidict` 6.1.0.</td>
+    </tr>
+
+    <tr>
+      <td>numpy</td>
+      <td>2.1.1</td>
+      <td>2.1.2</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
+
+    <tr>
+      <td>phonenumbers</td>
+      <td>8.13.44</td>
+      <td>8.13.47</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes**:
+        - The `phonenumbers` library has undergone internal changes, specifically:
+        - Changing several `std::string` parameters to `absl::string_view`, which may affect performance but is unlikely
+        to impact existing function calls.
+
+        - **Metadata Updates**:
+        - Phone metadata and geocoding data have been updated for multiple regions, which could improve parsing accuracy
+        but does not represent breaking changes.
+
+        No breaking changes, deprecations, or new relevant features were noted that would directly impact the current
+        codebase usage of `phonenumbers.parse()` or `phonenumbers.format_number()`.</td>
+    </tr>
+
+    <tr>
+      <td>protobuf</td>
+      <td>5.28.0</td>
+      <td>5.28.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Breaking Changes**: Version 5.28.0 has several breaking changes, primarily affecting the serialization and
+        deserialization of messages. Changes to `proto`, `service`, and `field` reflection may require updates in how
+        messages are defined and instantiated.
+
+        - **API Changes**: Several previously deprecated methods have been removed, requiring developers to migrate to
+        preferred alternatives.
+
+        - **New Features**: Introduced new features related to the `json_format` module, improving JSON
+        serialization/deserialization compatibility.
+
+        - **Performance Improvements**: Enhancements in serialization speed and efficiency may benefit applications
+        heavily relying on message processing.
+
+        - **Deprecations**: Certain functions related to field behavior are now deprecated, advising migration to the
+        new methods or patterns for future compatibility.
+
+        These changes likely require updates to how Protobuf messages are interacted with in your codebase, especially
+        in areas dealing with message creation and serialization.</td>
+    </tr>
+
+    <tr>
+      <td>pyasn1</td>
+      <td>0.6.0</td>
+      <td>0.6.1</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>pyasn1-modules</td>
+      <td>0.4.0</td>
+      <td>0.4.1</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes**: None specified that directly impact functionality.
+        - **New Features**: No new features relevant to existing functionality.
+        - **Deprecations**: No deprecations noted.
+        - **Breaking Changes**: No breaking changes mentioned.
+
+        No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>pydantic</td>
+      <td>2.8.2</td>
+      <td>2.9.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Breaking Change**: Merged `dict` type `json_schema_extra`, which may affect how JSON schema is generated
+        if the code relies on specific custom JSON schema behavior.
+        - **Deprecation**: Passing a dict to the `Examples` class is now deprecated. Code that uses this feature will
+        need to be updated.
+        - **New Feature**: Added support for `ZoneInfo`, which could impact datetime-related functionalities.
+        - **New Feature**: Added `Config.val_json_bytes`, which might affect configurations related to JSON
+        serialization if utilized.
+        - **Changes to Validators and Models**:
+        - Validators now show a warning when they do not return `self`, which may require adjustments to custom
+        validators in the codebase.
+        - Added support for `complex` numbers, which could be useful if any fields in models deal with complex types.
+        - **Field Validators**: Enhancements and changes to field validators, including how tagged unions are
+        serialized, which could affect data validation across models.
+        - **Serialization Improvements**: Various fixes related to schema generation and serialization for fields using
+        plain validators, potentially impacting how data is serialized and validated.
+
+        Consider reviewing and testing any custom validation or JSON schema generation logic in the codebase due to the
+        breaking changes and enhancements noted.</td>
+    </tr>
+
+    <tr>
+      <td>pydantic-core</td>
+      <td>2.20.1</td>
+      <td>2.24.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Version Upgrade**: pydantic-core updated from 2.20.1 to 2.24.2.
+        - **New Features**:
+        - Added `serialization` key to `InvalidSchema`, which could help developers diagnose serialization issues in
+        schemas.
+        - Introduced milliseconds option to `ser_json_timedelta`, enhancing datetime serialization capabilities.
+        - Support for unpacked `TypedDict` in `ArgumentsValidator`, which may affect function signatures when dealing
+        with keyword arguments.
+        - **Breaking Changes**:
+        - Changed `metadata` type hint from `Any` to `Dict[str, Any] | None`, requiring updates in any custom type hints
+        within schemas.
+        - **Error Handling Enhancements**:
+        - Relaxed error handling for `issubclass` and `isinstance` schemas, resulting in improved validation performance
+        and better handling of certain input types.
+
+        These changes are likely notable for any code interacting with pydantic schemas, especially in serialization or
+        validation scenarios.</td>
+    </tr>
+
+    <tr>
+      <td>pydantic-settings</td>
+      <td>2.4.0</td>
+      <td>2.6.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Config Options**:
+        - Added `cli_ignore_unknown_args` to handle unknown CLI arguments.
+        - Added `cli_flag_prefix_char` for specifying a prefix character for CLI flags.
+
+        - **CLI App Support**: Introduction of CLI App Support, potentially enhancing command-line interactions.
+
+        - **Field Management**:
+        - Added functionality to suppress fields from CLI help, allowing for better control over exposed arguments.
+
+        - **Bug Fixes**:
+        - Fixed issues related to nested model validation and alias handling, which may improve data validation
+        reliability in the codebase where nested models are utilized.
+
+        - **Documentation Update**:
+        - Enhanced examples and documentation around nested model partial updates, which can help in better
+        understanding and implementation in existing code.
+
+        These changes are relevant as they can directly impact the configurations, CLI interactions, and data validation
+        processes in your codebase.</td>
+    </tr>
+
+    <tr>
+      <td>pyparsing</td>
+      <td>3.1.4</td>
+      <td>3.2.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes**:
+        - Discontinued support for Python 3.6, 3.7, and 3.8, meaning this package will require at least Python 3.9.
+        - Exception message format can now be customized by overriding `ParseBaseException.format_message`, which could
+        change how exceptions are presented in the codebase.
+
+        - **Possible Breaking Changes**:
+        - Improvements in exception handling may result in changes to raised exceptions or their messages, especially if
+        your code relies on specific `ParseException` messages.
+        - Changes to `transform_string()` could affect output if your code relies on whitespace being preserved.
+        - `IndexError`s from parse actions will now propagate correctly, which might necessitate code adjustments if you
+        catch and handle these exceptions.
+
+        - **New Features**:
+        - Added type annotations in the package for improved type checking, which might affect type hints in your
+        codebase if you rely on type checking.
+        - The `QuotedString` class can now translate various escape sequences, which could impact string parsing if used
+        extensively in your code.
+
+        Overall, the changes could require code adjustments regarding exception handling and parsing behavior,
+        especially in areas where exceptions, message formats, and input string transformations are critical.</td>
+    </tr>
+
+    <tr>
+      <td>python-multipart</td>
+      <td>0.0.9</td>
+      <td>0.0.12</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes:**
+        - Support for `on_header_begin` was added, which may impact how headers are processed during multipart
+        processing.
+
+        - **Type Hint Improvements:**
+        - Enhanced type hints across various components, including `FormParser` and `File`. If the codebase relies on
+        type hints for development or library interactions, these improvements may be beneficial.
+
+        - **Header Handling Updates:**
+        - Fixed issues with allowing invalid CRLF in header names and addressed headers being incorrectly carried
+        between parts. This could affect the reliability and correctness of header handling in multipart data.
+
+        No relevant changes regarding deprecations or breaking changes.</td>
+    </tr>
+
+    <tr>
+      <td>rich</td>
+      <td>13.8.0</td>
+      <td>13.9.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>secure</td>
+      <td>0.3.0</td>
+      <td>1.0.1</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Breaking Changes**: Full redesign of the `secure.py` library with modern Python (3.10+) support and a
+        major API overhaul; existing code may require adjustments to integrate new API structure.
+
+        - **New Features**:
+        - Enhanced integration with FastAPI and support for asynchronous frameworks; beneficial for existing `FastAPI`
+        usage in the codebase.
+        - Added type hints and better type annotations; improves readability and developer experience, especially for
+        teams using static type checking.
+        - Refined default security headers; improves overall web protection, which may enhance security posture in the
+        application.
+
+        - **Performance Improvements**: `Secure.set_headers` performance has been enhanced, which could lead to more
+        efficient header management in web responses.
+
+        Consider reviewing and possibly refactoring code based on the breaking changes and the new API structure to
+        leverage performance and security enhancements effectively.</td>
+    </tr>
+
+    <tr>
+      <td>sentry-sdk</td>
+      <td>2.13.0</td>
+      <td>2.17.0</td>
+      <td class="status-NOT_FOUND">NOT_FOUND</td>
+      <td>N/A</td>
+    </tr>
+
+    <tr>
+      <td>setuptools</td>
+      <td>74.1.2</td>
+      <td>75.2.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Explicit Error Messaging**: Improved error messages for incorrect `Distribution` data types (expected
+        `tuple[str, ...] | list[str]`). This may help developers understand issues when specifying distribution
+        attributes.
+        - **Deprecation of `bdist_wheel.universal`**: If your codebase uses universal wheels for packaging, this setting
+        is deprecated and should be removed to avoid future issues.
+        - **Removal of `upload_docs` Command**: If documentation uploading was part of your workflow, this command is no
+        longer available.
+        - **Changes in Distribution Logic**: Adjustments to how `.dist-info` directories are handled during wheel
+        creation may affect custom build logic or workflows.
+
+        These changes could necessitate updates in your packaging and distribution practices depending on your usage of
+        these features.</td>
+    </tr>
+
+    <tr>
+      <td>sqlalchemy</td>
+      <td>2.0.34</td>
+      <td>2.0.36</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Parameter in ORM**: Introduced `hash` parameter for `mapped_column`, which could enhance ORM Native
+        Dataclasses approach in your models.
+        - **Behavior on Update**: Columns with `onupdate` or `server_onupdate` now refresh correctly during ORM UPDATE
+        operations, benefiting existing model behaviors when updates are made in your CRUD operations.
+        - **Improved Return Handling**: Fixed bugs related to ORM behaviors with `RETURNING` clauses in DML statements,
+        enhancing the reliability of data manipulation in `AsyncSession` contexts.
+        - **JSON/JSONB Bind Casts**: Added consistent "bind cast" for PostgreSQL JSON types, ensuring better type
+        handling which is useful if your models involve JSON fields.
+        - **Improved Error Messaging**: Improved error messaging for dataclass mappings, aiding in debugging and
+        ensuring proper usage in your ORM configurations.
+        - **Fixed Reflection for MySQL**: Optimizations for reflecting foreign keys in MySQL, which may streamline the
+        management of relations in your models.
+
+        These changes could significantly impact data manipulation, ORM configurations, and performance optimizations in
+        your codebase.</td>
+    </tr>
+
+    <tr>
+      <td>starlette</td>
+      <td>0.38.4</td>
+      <td>0.41.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Version 0.41.0**:
+        - Addition of the ability to raise `HTTPException` before `websocket.accept()`, which could impact how
+        exceptions are handled in WebSocket connections.
+
+        - **Version 0.40.0**:
+        - Security fix for Denial of Service (DoS) via `multipart/form-data` requests, including an addition of
+        `max_part_size` to `MultiPartParser`. Relevant if handling file uploads in your application.
+
+        - **Version 0.39.2**:
+        - Enhancement allowing use of `request.url_for` when only "app" scope is available, potentially helpful if the
+        application involves route generation.
+
+        - **Version 0.39.0**:
+        - Introduction of support for HTTP Range in `FileResponse`, which may be important if serving files or handling
+        range requests.
+
+        No breaking changes or deprecations were noted.</td>
+    </tr>
+
+    <tr>
+      <td>stytch</td>
+      <td>11.4.1</td>
+      <td>11.7.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- New feature: External connection endpoints were added in version 11.7.0. This could introduce new
+        functionality relevant to your use of the `B2BClient`.
+        - Improvement: OIDC enhancements in version 11.6.0 might affect authentication processes, which could impact how
+        `AuthorizationCheck` and `MemberSession` are handled in your code.
+        - Fix: The return type for member sessions with magic links was corrected in version 11.5.0. This is
+        particularly relevant for any code that interacts with member sessions and expects specific return types.
+
+        Overall, consider validating if your code implements or expects functionality related to the new external
+        connection endpoints, and ensure that the changes in authentication and return types align with your
+        implementation.</td>
+    </tr>
+
+    <tr>
+      <td>twilio</td>
+      <td>9.2.4</td>
+      <td>9.3.4</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Response Key**: Added `country` key to the AvailablePhoneNumber resource, allowing filters by country
+        in relevant API calls.
+        - **Verify API**: Introduced `SnaClientToken` and `EnableSnaClientToken` optional parameters for verification
+        processes, which may affect how verification is handled in `twilio.send_sms_message()`.
+        - **Breaking Change**: The `date_created` field in Port In Request is now typed as `date_time` instead of
+        `date`, which could impact data handling and database integration where this field is involved.
+
+        Potential relevance to the codebase:
+        - If the application interacts with phone numbers or verification, the new parameters may need to be integrated
+        or adjusted in method calls.
+        - The breaking change regarding the `date_created` may require updates in the database model or any data
+        processing logic.</td>
+    </tr>
+
+    <tr>
+      <td>urllib3</td>
+      <td>2.2.2</td>
+      <td>2.2.3</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes:**
+        - Default encoding for chunked request bodies is now UTF-8 instead of ISO-8859-1, which may affect how request
+        bodies are processed in your applications.
+
+        - **New Features:**
+        - Support added for HTTP/2, with version checking for `h2` and mechanisms for probing HTTP/2 support in target
+        origins. If your codebase leverages HTTP/2, these changes could be relevant.
+
+        - **Deprecations:**
+        - Removal of the `_version.py` file and dropping support for end-of-life PyPy3.8 and PyPy3.9 could impact
+        downstream packaging or compatibility if you are using these versions.
+
+        No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>uvicorn</td>
+      <td>0.30.6</td>
+      <td>0.32.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Python 3.13 Support**: Uvicorn now officially supports Python 3.13, allowing for usage of newer Python
+        features if the codebase is updated to 3.13.
+        - **`max_request_limit` Warning**: A warning is emitted when the `max_request_limit` is exceeded, potentially
+        requiring handling for cases when requests exceed this limit.
+        - **WebSocket Support Update**: Compatibility with WebSockets 0.13.1 has been restored, which may affect
+        WebSocket-related functionality if utilized.
+        - **`ProxyHeadersMiddleware` Improvements**: Enhancements include:
+        - Correct handling of requests from proxy clients.
+        - Improved support for trusted hosts, which could simplify deployment procedures in Docker Swarm/Kubernetes
+        environments, especially regarding dynamic IPs and IPv6 support.
+
+        These updates may require code modifications to handle new warnings or ensure compatibility with deployed
+        infrastructure.</td>
+    </tr>
+
+    <tr>
+      <td>uvloop</td>
+      <td>0.20.0</td>
+      <td>0.21.0</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **New Feature**: `create_unix_server()` now accepts a `cleanup_socket` parameter. This could affect any code
+        that creates Unix domain servers using `uvloop` in your application, requiring an update to how servers are
+        instantiated if this parameter is utilized.
+
+        No relevant breaking changes or deprecations were noted in this release.</td>
+    </tr>
+
+    <tr>
+      <td>websockets</td>
+      <td>13.0.1</td>
+      <td>13.1</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **API Changes**: No relevant API changes found in version 13.1 compared to 13.0.1 of the `websockets`
+        package.
+        - **New Features**: None noted for the codebase's context.
+        - **Deprecations**: None mentioned that would be relevant.
+        - **Breaking Changes**: None listed.
+
+        No relevant changes.</td>
+    </tr>
+
+    <tr>
+      <td>yarl</td>
+      <td>1.9.8</td>
+      <td>1.15.5</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Breaking Changes**:
+        - Support for Python 3.8 has been removed (1.15.3). If your codebase relies on Python 3.8, you will need to
+        upgrade to at least Python 3.9.
+
+        - **New Features**:
+        - Added the `URL.extend_query()` method for extending query parameters without replacing existing ones (1.11.0).
+        - Introduced the `URL.without_query_params()` method to drop specified parameters from the query string
+        (1.10.0).
+
+        - **API Changes**:
+        - Validation fix in `URL.with_scheme()` for non-lowercase schemes improves robustness (1.15.0).
+        - New attribute `URL.host_subcomponent` added to fetch the host subcomponent in compliance with RFC 3986
+        (1.13.0).
+
+        - **Noteworthy Fixes**:
+        - Fixed path validation in `URL.build()` to ensure paths start with `/` when passing authority (1.15.3).
+        - Improved handling of joining URLs to align with RFC 3986, addressing issues with empty segments (1.10.0).
+
+        These changes might impact any URL manipulations within your codebase, especially with regards to managing query
+        parameters and ensuring compatibility with the Python version in use.</td>
+    </tr>
+
+    <tr>
+      <td>zipp</td>
+      <td>3.20.1</td>
+      <td>3.20.2</td>
+      <td class="status-SUCCESS">SUCCESS</td>
+      <td>- **Hashability of Overlay Zipfile**: The `zipp.compat.overlay.zipfile` has been made hashable. This change
+        could affect operations in the codebase that rely on using zip files as keys in dictionaries or sets,
+        potentially enhancing performance or fixing related issues in those contexts.
+
+        No relevant changes.</td>
+    </tr>
+
+  </table>
+</body>
+
+</html>
+
+- Introduction of support for HTTP Range in `FileResponse`, which may be important if serving files or
+handling range requests.
 
 No breaking changes or deprecations were noted.</td>
-            </tr>
-            
-            <tr>
-                <td>stytch</td>
-                <td>11.4.1</td>
-                <td>11.7.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- New feature: External connection endpoints were added in version 11.7.0. This could introduce new functionality relevant to your use of the `B2BClient`.
-- Improvement: OIDC enhancements in version 11.6.0 might affect authentication processes, which could impact how `AuthorizationCheck` and `MemberSession` are handled in your code.
-- Fix: The return type for member sessions with magic links was corrected in version 11.5.0. This is particularly relevant for any code that interacts with member sessions and expects specific return types.
+</tr>
 
-Overall, consider validating if your code implements or expects functionality related to the new external connection endpoints, and ensure that the changes in authentication and return types align with your implementation.</td>
-            </tr>
-            
-            <tr>
-                <td>twilio</td>
-                <td>9.2.4</td>
-                <td>9.3.4</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Response Key**: Added `country` key to the AvailablePhoneNumber resource, allowing filters by country in relevant API calls.
-- **Verify API**: Introduced `SnaClientToken` and `EnableSnaClientToken` optional parameters for verification processes, which may affect how verification is handled in `twilio.send_sms_message()`.
-- **Breaking Change**: The `date_created` field in Port In Request is now typed as `date_time` instead of `date`, which could impact data handling and database integration where this field is involved.
+<tr>
+  <td>stytch</td>
+  <td>11.4.1</td>
+  <td>11.7.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- New feature: External connection endpoints were added in version 11.7.0. This could introduce new
+    functionality relevant to your use of the `B2BClient`.
+    - Improvement: OIDC enhancements in version 11.6.0 might affect authentication processes, which could impact
+    how `AuthorizationCheck` and `MemberSession` are handled in your code.
+    - Fix: The return type for member sessions with magic links was corrected in version 11.5.0. This is
+    particularly relevant for any code that interacts with member sessions and expects specific return types.
 
-Potential relevance to the codebase:
-- If the application interacts with phone numbers or verification, the new parameters may need to be integrated or adjusted in method calls. 
-- The breaking change regarding the `date_created` may require updates in the database model or any data processing logic.</td>
-            </tr>
-            
-            <tr>
-                <td>urllib3</td>
-                <td>2.2.2</td>
-                <td>2.2.3</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes:**
-  - Default encoding for chunked request bodies is now UTF-8 instead of ISO-8859-1, which may affect how request bodies are processed in your applications.
+    Overall, consider validating if your code implements or expects functionality related to the new external
+    connection endpoints, and ensure that the changes in authentication and return types align with your
+    implementation.</td>
+</tr>
 
-- **New Features:**
-  - Support added for HTTP/2, with version checking for `h2` and mechanisms for probing HTTP/2 support in target origins. If your codebase leverages HTTP/2, these changes could be relevant.
+<tr>
+  <td>twilio</td>
+  <td>9.2.4</td>
+  <td>9.3.4</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **New Response Key**: Added `country` key to the AvailablePhoneNumber resource, allowing filters by
+    country in relevant API calls.
+    - **Verify API**: Introduced `SnaClientToken` and `EnableSnaClientToken` optional parameters for verification
+    processes, which may affect how verification is handled in `twilio.send_sms_message()`.
+    - **Breaking Change**: The `date_created` field in Port In Request is now typed as `date_time` instead of
+    `date`, which could impact data handling and database integration where this field is involved.
 
-- **Deprecations:**
-  - Removal of the `_version.py` file and dropping support for end-of-life PyPy3.8 and PyPy3.9 could impact downstream packaging or compatibility if you are using these versions.
+    Potential relevance to the codebase:
+    - If the application interacts with phone numbers or verification, the new parameters may need to be
+    integrated or adjusted in method calls.
+    - The breaking change regarding the `date_created` may require updates in the database model or any data
+    processing logic.</td>
+</tr>
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>uvicorn</td>
-                <td>0.30.6</td>
-                <td>0.32.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Python 3.13 Support**: Uvicorn now officially supports Python 3.13, allowing for usage of newer Python features if the codebase is updated to 3.13.
-- **`max_request_limit` Warning**: A warning is emitted when the `max_request_limit` is exceeded, potentially requiring handling for cases when requests exceed this limit.
-- **WebSocket Support Update**: Compatibility with WebSockets 0.13.1 has been restored, which may affect WebSocket-related functionality if utilized.
-- **`ProxyHeadersMiddleware` Improvements**: Enhancements include:
-  - Correct handling of requests from proxy clients.
-  - Improved support for trusted hosts, which could simplify deployment procedures in Docker Swarm/Kubernetes environments, especially regarding dynamic IPs and IPv6 support.
+<tr>
+  <td>urllib3</td>
+  <td>2.2.2</td>
+  <td>2.2.3</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **API Changes:**
+    - Default encoding for chunked request bodies is now UTF-8 instead of ISO-8859-1, which may affect how request
+    bodies are processed in your applications.
 
-These updates may require code modifications to handle new warnings or ensure compatibility with deployed infrastructure.</td>
-            </tr>
-            
-            <tr>
-                <td>uvloop</td>
-                <td>0.20.0</td>
-                <td>0.21.0</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **New Feature**: `create_unix_server()` now accepts a `cleanup_socket` parameter. This could affect any code that creates Unix domain servers using `uvloop` in your application, requiring an update to how servers are instantiated if this parameter is utilized.
-  
-No relevant breaking changes or deprecations were noted in this release.</td>
-            </tr>
-            
-            <tr>
-                <td>websockets</td>
-                <td>13.0.1</td>
-                <td>13.1</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **API Changes**: No relevant API changes found in version 13.1 compared to 13.0.1 of the `websockets` package.
-- **New Features**: None noted for the codebase's context.
-- **Deprecations**: None mentioned that would be relevant.
-- **Breaking Changes**: None listed.
+    - **New Features:**
+    - Support added for HTTP/2, with version checking for `h2` and mechanisms for probing HTTP/2 support in target
+    origins. If your codebase leverages HTTP/2, these changes could be relevant.
 
-No relevant changes.</td>
-            </tr>
-            
-            <tr>
-                <td>yarl</td>
-                <td>1.9.8</td>
-                <td>1.15.5</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Breaking Changes**: 
-  - Support for Python 3.8 has been removed (1.15.3). If your codebase relies on Python 3.8, you will need to upgrade to at least Python 3.9.
+    - **Deprecations:**
+    - Removal of the `_version.py` file and dropping support for end-of-life PyPy3.8 and PyPy3.9 could impact
+    downstream packaging or compatibility if you are using these versions.
 
-- **New Features**:
-  - Added the `URL.extend_query()` method for extending query parameters without replacing existing ones (1.11.0).
-  - Introduced the `URL.without_query_params()` method to drop specified parameters from the query string (1.10.0).
-  
-- **API Changes**:
-  - Validation fix in `URL.with_scheme()` for non-lowercase schemes improves robustness (1.15.0).
-  - New attribute `URL.host_subcomponent` added to fetch the host subcomponent in compliance with RFC 3986 (1.13.0).
-  
-- **Noteworthy Fixes**:
-  - Fixed path validation in `URL.build()` to ensure paths start with `/` when passing authority (1.15.3).
-  - Improved handling of joining URLs to align with RFC 3986, addressing issues with empty segments (1.10.0).
+    No relevant changes.</td>
+</tr>
 
-These changes might impact any URL manipulations within your codebase, especially with regards to managing query parameters and ensuring compatibility with the Python version in use.</td>
-            </tr>
-            
-            <tr>
-                <td>zipp</td>
-                <td>3.20.1</td>
-                <td>3.20.2</td>
-                <td class="status-SUCCESS">SUCCESS</td>
-                <td>- **Hashability of Overlay Zipfile**: The `zipp.compat.overlay.zipfile` has been made hashable. This change could affect operations in the codebase that rely on using zip files as keys in dictionaries or sets, potentially enhancing performance or fixing related issues in those contexts. 
+<tr>
+  <td>uvicorn</td>
+  <td>0.30.6</td>
+  <td>0.32.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Python 3.13 Support**: Uvicorn now officially supports Python 3.13, allowing for usage of newer Python
+    features if the codebase is updated to 3.13.
+    - **`max_request_limit` Warning**: A warning is emitted when the `max_request_limit` is exceeded, potentially
+    requiring handling for cases when requests exceed this limit.
+    - **WebSocket Support Update**: Compatibility with WebSockets 0.13.1 has been restored, which may affect
+    WebSocket-related functionality if utilized.
+    - **`ProxyHeadersMiddleware` Improvements**: Enhancements include:
+    - Correct handling of requests from proxy clients.
+    - Improved support for trusted hosts, which could simplify deployment procedures in Docker Swarm/Kubernetes
+    environments, especially regarding dynamic IPs and IPv6 support.
 
-No relevant changes.</td>
-            </tr>
-            
-        </table>
-    </body>
-    </html>
-    
+    These updates may require code modifications to handle new warnings or ensure compatibility with deployed
+    infrastructure.</td>
+</tr>
+
+<tr>
+  <td>uvloop</td>
+  <td>0.20.0</td>
+  <td>0.21.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **New Feature**: `create_unix_server()` now accepts a `cleanup_socket` parameter. This could affect any
+    code that creates Unix domain servers using `uvloop` in your application, requiring an update to how servers
+    are instantiated if this parameter is utilized.
+
+    No relevant breaking changes or deprecations were noted in this release.</td>
+</tr>
+
+<tr>
+  <td>websockets</td>
+  <td>13.0.1</td>
+  <td>13.1</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **API Changes**: No relevant API changes found in version 13.1 compared to 13.0.1 of the `websockets`
+    package.
+    - **New Features**: None noted for the codebase's context.
+    - **Deprecations**: None mentioned that would be relevant.
+    - **Breaking Changes**: None listed.
+
+    No relevant changes.</td>
+</tr>
+
+<tr>
+  <td>yarl</td>
+  <td>1.9.8</td>
+  <td>1.15.5</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Breaking Changes**:
+    - Support for Python 3.8 has been removed (1.15.3). If your codebase relies on Python 3.8, you will need to
+    upgrade to at least Python 3.9.
+
+    - **New Features**:
+    - Added the `URL.extend_query()` method for extending query parameters without replacing existing ones
+    (1.11.0).
+    - Introduced the `URL.without_query_params()` method to drop specified parameters from the query string
+    (1.10.0).
+
+    - **API Changes**:
+    - Validation fix in `URL.with_scheme()` for non-lowercase schemes improves robustness (1.15.0).
+    - New attribute `URL.host_subcomponent` added to fetch the host subcomponent in compliance with RFC 3986
+    (1.13.0).
+
+    - **Noteworthy Fixes**:
+    - Fixed path validation in `URL.build()` to ensure paths start with `/` when passing authority (1.15.3).
+    - Improved handling of joining URLs to align with RFC 3986, addressing issues with empty segments (1.10.0).
+
+    These changes might impact any URL manipulations within your codebase, especially with regards to managing
+    query parameters and ensuring compatibility with the Python version in use.</td>
+</tr>
+
+<tr>
+  <td>zipp</td>
+  <td>3.20.1</td>
+  <td>3.20.2</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Hashability of Overlay Zipfile**: The `zipp.compat.overlay.zipfile` has been made hashable. This change
+    could affect operations in the codebase that rely on using zip files as keys in dictionaries or sets,
+    potentially enhancing performance or fixing related issues in those contexts.
+
+    No relevant changes.</td>
+</tr>
+
+</table>
+</body>
+
+</html>
+
+
+- **Version 0.39.2**:
+- Enhancement allowing use of `request.url_for` when only "app" scope is available, potentially helpful if the
+application involves route generation.
+
+- **Version 0.39.0**:
+- Introduction of support for HTTP Range in `FileResponse`, which may be important if serving files or handling
+range requests.
+
+No breaking changes or deprecations were noted.</td>
+</tr>
+
+<tr>
+  <td>stytch</td>
+  <td>11.4.1</td>
+  <td>11.7.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- New feature: External connection endpoints were added in version 11.7.0. This could introduce new
+    functionality relevant to your use of the `B2BClient`.
+    - Improvement: OIDC enhancements in version 11.6.0 might affect authentication processes, which could impact how
+    `AuthorizationCheck` and `MemberSession` are handled in your code.
+    - Fix: The return type for member sessions with magic links was corrected in version 11.5.0. This is
+    particularly relevant for any code that interacts with member sessions and expects specific return types.
+
+    Overall, consider validating if your code implements or expects functionality related to the new external
+    connection endpoints, and ensure that the changes in authentication and return types align with your
+    implementation.</td>
+</tr>
+
+<tr>
+  <td>twilio</td>
+  <td>9.2.4</td>
+  <td>9.3.4</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **New Response Key**: Added `country` key to the AvailablePhoneNumber resource, allowing filters by country
+    in relevant API calls.
+    - **Verify API**: Introduced `SnaClientToken` and `EnableSnaClientToken` optional parameters for verification
+    processes, which may affect how verification is handled in `twilio.send_sms_message()`.
+    - **Breaking Change**: The `date_created` field in Port In Request is now typed as `date_time` instead of
+    `date`, which could impact data handling and database integration where this field is involved.
+
+    Potential relevance to the codebase:
+    - If the application interacts with phone numbers or verification, the new parameters may need to be integrated
+    or adjusted in method calls.
+    - The breaking change regarding the `date_created` may require updates in the database model or any data
+    processing logic.</td>
+</tr>
+
+<tr>
+  <td>urllib3</td>
+  <td>2.2.2</td>
+  <td>2.2.3</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **API Changes:**
+    - Default encoding for chunked request bodies is now UTF-8 instead of ISO-8859-1, which may affect how request
+    bodies are processed in your applications.
+
+    - **New Features:**
+    - Support added for HTTP/2, with version checking for `h2` and mechanisms for probing HTTP/2 support in target
+    origins. If your codebase leverages HTTP/2, these changes could be relevant.
+
+    - **Deprecations:**
+    - Removal of the `_version.py` file and dropping support for end-of-life PyPy3.8 and PyPy3.9 could impact
+    downstream packaging or compatibility if you are using these versions.
+
+    No relevant changes.</td>
+</tr>
+
+<tr>
+  <td>uvicorn</td>
+  <td>0.30.6</td>
+  <td>0.32.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Python 3.13 Support**: Uvicorn now officially supports Python 3.13, allowing for usage of newer Python
+    features if the codebase is updated to 3.13.
+    - **`max_request_limit` Warning**: A warning is emitted when the `max_request_limit` is exceeded, potentially
+    requiring handling for cases when requests exceed this limit.
+    - **WebSocket Support Update**: Compatibility with WebSockets 0.13.1 has been restored, which may affect
+    WebSocket-related functionality if utilized.
+    - **`ProxyHeadersMiddleware` Improvements**: Enhancements include:
+    - Correct handling of requests from proxy clients.
+    - Improved support for trusted hosts, which could simplify deployment procedures in Docker Swarm/Kubernetes
+    environments, especially regarding dynamic IPs and IPv6 support.
+
+    These updates may require code modifications to handle new warnings or ensure compatibility with deployed
+    infrastructure.</td>
+</tr>
+
+<tr>
+  <td>uvloop</td>
+  <td>0.20.0</td>
+  <td>0.21.0</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **New Feature**: `create_unix_server()` now accepts a `cleanup_socket` parameter. This could affect any code
+    that creates Unix domain servers using `uvloop` in your application, requiring an update to how servers are
+    instantiated if this parameter is utilized.
+
+    No relevant breaking changes or deprecations were noted in this release.</td>
+</tr>
+
+<tr>
+  <td>websockets</td>
+  <td>13.0.1</td>
+  <td>13.1</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **API Changes**: No relevant API changes found in version 13.1 compared to 13.0.1 of the `websockets`
+    package.
+    - **New Features**: None noted for the codebase's context.
+    - **Deprecations**: None mentioned that would be relevant.
+    - **Breaking Changes**: None listed.
+
+    No relevant changes.</td>
+</tr>
+
+<tr>
+  <td>yarl</td>
+  <td>1.9.8</td>
+  <td>1.15.5</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Breaking Changes**:
+    - Support for Python 3.8 has been removed (1.15.3). If your codebase relies on Python 3.8, you will need to
+    upgrade to at least Python 3.9.
+
+    - **New Features**:
+    - Added the `URL.extend_query()` method for extending query parameters without replacing existing ones (1.11.0).
+    - Introduced the `URL.without_query_params()` method to drop specified parameters from the query string
+    (1.10.0).
+
+    - **API Changes**:
+    - Validation fix in `URL.with_scheme()` for non-lowercase schemes improves robustness (1.15.0).
+    - New attribute `URL.host_subcomponent` added to fetch the host subcomponent in compliance with RFC 3986
+    (1.13.0).
+
+    - **Noteworthy Fixes**:
+    - Fixed path validation in `URL.build()` to ensure paths start with `/` when passing authority (1.15.3).
+    - Improved handling of joining URLs to align with RFC 3986, addressing issues with empty segments (1.10.0).
+
+    These changes might impact any URL manipulations within your codebase, especially with regards to managing query
+    parameters and ensuring compatibility with the Python version in use.</td>
+</tr>
+
+<tr>
+  <td>zipp</td>
+  <td>3.20.1</td>
+  <td>3.20.2</td>
+  <td class="status-SUCCESS">SUCCESS</td>
+  <td>- **Hashability of Overlay Zipfile**: The `zipp.compat.overlay.zipfile` has been made hashable. This change
+    could affect operations in the codebase that rely on using zip files as keys in dictionaries or sets,
+    potentially enhancing performance or fixing related issues in those contexts.
+
+    No relevant changes.</td>
+</tr>
+
+</table>
+</body>
+
+</html>
