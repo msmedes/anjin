@@ -87,14 +87,12 @@ async def fetch_changelog(
     if settings.USE_CACHE:
         changelog_cache = ChangelogCache()
         if changelog_cache.contains(package, current_version, latest_version):
-            print(f"Using cached changelog for {package}")
             cache = changelog_cache.get(package, current_version, latest_version)
             return ChangelogRetrievalResult(
                 status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache
             )
 
     try:
-        print(f"Not using cache for changelog for {package}")
         changelog = changelogs.get(package)
         if changelog:
             filtered_changelog = filter_changelog_by_version(
@@ -205,7 +203,6 @@ def check_updates(
         settings.USE_CACHE = not no_cache
         console.print("[bold green]Parsing requirements file...[/bold green]")
         dependencies, ignored_packages = await parse_requirements(requirements_file)
-        print(dependencies)
 
         console.print(f"[bold]Found {len(dependencies)} dependencies to check.[/bold]")
         if ignored_packages:
