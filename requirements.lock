@@ -15,25 +15,16 @@ annotated-types==0.7.0
 anyio==4.4.0
     # via httpx
     # via openai
-beautifulsoup4==4.12.3
-    # via anjin
 certifi==2024.7.4
     # via httpcore
     # via httpx
     # via requests
-cffi==1.17.0
-    # via cryptography
-    # via pynacl
 changelogs==0.15.0
     # via anjin
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via typer
-cryptography==43.0.0
-    # via pyjwt
-deprecated==1.2.14
-    # via pygithub
 distro==1.9.0
     # via openai
 gitchangelog==3.0.4
@@ -62,8 +53,6 @@ openai==1.42.0
 packaging==24.1
     # via anjin
     # via changelogs
-pycparser==2.22
-    # via cffi
 pydantic==2.8.2
     # via anjin
     # via openai
@@ -72,40 +61,22 @@ pydantic-core==2.20.1
     # via pydantic
 pydantic-settings==2.4.0
     # via anjin
-pygithub==2.3.0
-    # via anjin
 pygments==2.18.0
     # via rich
-pyjwt==2.9.0
-    # via pygithub
-pynacl==1.5.0
-    # via pygithub
 python-dotenv==1.0.1
     # via anjin
     # via pydantic-settings
-ratelimit==2.2.1
-    # via anjin
-regex==2024.7.24
-    # via tiktoken
 requests==2.32.3
     # via changelogs
-    # via pygithub
-    # via tiktoken
 rich==13.7.1
     # via anjin
     # via typer
-ruff==0.6.2
-    # via anjin
 shellingham==1.5.4
     # via typer
 sniffio==1.3.1
     # via anyio
     # via httpx
     # via openai
-soupsieve==2.6
-    # via beautifulsoup4
-tiktoken==0.7.0
-    # via anjin
 tqdm==4.66.5
     # via openai
 typer==0.12.5
@@ -114,12 +85,8 @@ typing-extensions==4.12.2
     # via openai
     # via pydantic
     # via pydantic-core
-    # via pygithub
     # via typer
 urllib3==2.2.2
-    # via pygithub
     # via requests
 validators==0.33.0
     # via changelogs
-wrapt==1.16.0
-    # via deprecated
