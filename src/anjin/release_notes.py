@@ -18,6 +18,7 @@ from anjin.changelog_registry import (
 from anjin.config import settings
 from anjin.generate_html import generate_html_output
 from anjin.openai_client import summarize_changes
+from anjin.vector import ChromaIndex
 
 # monkey patch the changelog registry to use the github token don't @ me
 os.environ["CHANGELOGS_GITHUB_API_TOKEN"] = settings.GITHUB_TOKEN
@@ -171,6 +172,80 @@ async def process_single_dependency(
     return package, current_version, latest_version, changelog_result
 
 
+async def do_stuff(
+    requirements_file: str, output_html: str, console_output: bool, codebase_path: str
+):
+    console.print("[bold green]Parsing requirements file...[/bold green]")
+    dependencies, ignored_packages = await parse_requirements(requirements_file)
+
+    console.print(f"[bold]Found {len(dependencies)} dependencies to check.[/bold]")
+    if ignored_packages:
+        console.print(
+            f"[bold yellow]Ignoring {len(ignored_packages)} packages.[/bold yellow]"
+        )
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        console=console,
+        expand=True,
+    ) as progress:
+        overall_task = progress.add_task(
+            "[cyan]Overall progress", total=len(dependencies)
+        )
+        package_tasks = {
+            package: progress.add_task(f"[cyan]{package}", total=100, start=False)
+            for package in dependencies.keys()
+        }
+
+        tasks = [
+            process_single_dependency(
+                package,
+                current_version,
+                codebase_path,
+                requirements_file,
+                progress,
+                overall_task,
+                package_tasks[package],
+                ignored_packages,
+            )
+            for package, current_version in dependencies.items()
+        ]
+
+        results = await asyncio.gather(*tasks)
+
+    updates_found = any(result for result in results if result)
+
+    if console_output:
+        if updates_found:
+            table = Table(title="Dependency Updates")
+            table.add_column("Package", style="cyan")
+            table.add_column("Current Version", style="magenta")
+            table.add_column("Latest Version", style="green")
+            table.add_column("Status", style="yellow")
+            table.add_column("Summary", style="blue")
+
+            for result in results:
+                if result:
+                    package, current_version, latest_version, changelog_result = result
+                    table.add_row(
+                        package,
+                        current_version,
+                        latest_version,
+                        changelog_result.status.value,
+                        changelog_result.summary or "N/A",
+                    )
+
+            console.print(table)
+        else:
+            console.print("[bold green]All dependencies are up to date![/bold green]")
+    else:
+        generate_html_output(results, output_html)
+        console.print(f"[bold green]HTML output saved to: {output_html}[/bold green]")
+
+
 @app.command()
 def check_updates(
     requirements_file: Annotated[
@@ -201,81 +276,10 @@ def check_updates(
     async def main():
         settings.DEBUG = debug
         settings.USE_CACHE = not no_cache
-        console.print("[bold green]Parsing requirements file...[/bold green]")
-        dependencies, ignored_packages = await parse_requirements(requirements_file)
 
-        console.print(f"[bold]Found {len(dependencies)} dependencies to check.[/bold]")
-        if ignored_packages:
-            console.print(
-                f"[bold yellow]Ignoring {len(ignored_packages)} packages.[/bold yellow]"
-            )
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            console=console,
-            expand=True,
-        ) as progress:
-            overall_task = progress.add_task(
-                "[cyan]Overall progress", total=len(dependencies)
-            )
-            package_tasks = {
-                package: progress.add_task(f"[cyan]{package}", total=100, start=False)
-                for package in dependencies.keys()
-            }
-
-            tasks = [
-                process_single_dependency(
-                    package,
-                    current_version,
-                    codebase_path,
-                    requirements_file,
-                    progress,
-                    overall_task,
-                    package_tasks[package],
-                    ignored_packages,
-                )
-                for package, current_version in dependencies.items()
-            ]
-
-            results = await asyncio.gather(*tasks)
-
-        updates_found = any(result for result in results if result)
-
-        if console_output:
-            if updates_found:
-                table = Table(title="Dependency Updates")
-                table.add_column("Package", style="cyan")
-                table.add_column("Current Version", style="magenta")
-                table.add_column("Latest Version", style="green")
-                table.add_column("Status", style="yellow")
-                table.add_column("Summary", style="blue")
-
-                for result in results:
-                    if result:
-                        package, current_version, latest_version, changelog_result = (
-                            result
-                        )
-                        table.add_row(
-                            package,
-                            current_version,
-                            latest_version,
-                            changelog_result.status.value,
-                            changelog_result.summary or "N/A",
-                        )
-
-                console.print(table)
-            else:
-                console.print(
-                    "[bold green]All dependencies are up to date![/bold green]"
-                )
-        else:
-            generate_html_output(results, output_html)
-            console.print(
-                f"[bold green]HTML output saved to: {output_html}[/bold green]"
-            )
+        # await do_stuff(requirements_file, output_html, console_output, codebase_path)
+        chroma = ChromaIndex(codebase_path)
+        chroma.index_codebase()
 
     asyncio.run(main())
 

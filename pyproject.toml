@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2.8.2",
     "pydantic-settings>=2.4.0",
     "changelogs>=0.15.0",
+    "chromadb>=0.5.15",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

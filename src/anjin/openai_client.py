@@ -19,39 +19,27 @@ async def summarize_changes(
         requirements_content = f.read()
 
     prompt = f"""
-Analyze the following changelog for the Python package '{package}' and provide a concise, actionable summary of changes between the currently used version and the latest version. Focus on:
+    Analyze the following changelog for the Python package '{package}' and provide a concise summary
+    of changes that are likely to be relevant to the given codebase. This changelog only includes
+    changes between the currently used version and the latest version. Focus on API changes, new features,
+    deprecations, and breaking changes. Ignore minor bug fixes or internal changes unless they seem particularly important.
+    No yapping. Do not preface your response with anything like 
+    "Here is a summary of the changes" or anything like that. Just give me the summary.
+    If there are no relevant changes, just say "No relevant changes".
 
-1. Breaking changes
-2. API modifications
-3. New features
-4. Deprecations
-5. Performance improvements
-6. Security updates
+    Start with a tl;dr summary of the changes and whether they are likely to be relevant to the codebase.
 
-Ignore minor bug fixes, documentation updates, or internal changes unless they seem particularly impactful.
+    Changelog:
+    {changelog}
 
-Format your response as follows:
-1. TL;DR (50 words max): Brief overview of changes and their potential impact on the codebase.
-2. Detailed summary (bullet points, 200 words max):
-   - Breaking changes
-   - New features and API modifications
-   - Deprecations
-   - Performance and security updates
-3. Action items (if any): Suggest 1-3 specific steps to adapt the codebase to these changes.
+    Relevant code snippets from the codebase:
+    {codebase_sample}
 
-Consider how these changes might affect the given code snippets and the project's dependencies.
+    Project requirements:
+    {requirements_content}
 
-Changelog:
-{changelog}
-
-Relevant code snippets from the codebase:
-{codebase_sample}
-
-Project requirements:
-{requirements_content}
-
-Provide your analysis:
-"""
+    Provide a concise, brief, bullet-point summary of relevant changes, considering how they might affect the given code snippets:
+    """
 
     if not settings.DEBUG:
         client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
