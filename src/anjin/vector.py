@@ -22,8 +22,9 @@ import hashlib
 import json
 import os
 import re
+from datetime import datetime
 from pathlib import Path
-from typing import NamedTuple
+from typing import Generator, NamedTuple
 
 import chromadb
 from chromadb.config import Settings
@@ -36,15 +37,6 @@ class FileToIndex(NamedTuple):
     file_hash: str
     content: str
 
-    def to_dict(self):
-        return {
-            self.file_path: {
-                "file_hash": self.file_hash,
-                # will be replaced by chunks
-                "content": self.content,
-            }
-        }
-
 
 class ChromaIndex:
     def __init__(self, codebase_path: str, console: Console):
@@ -54,7 +46,9 @@ class ChromaIndex:
         self.files_to_index = []
         self.files_to_delete = set()
         self.all_file_paths = set()
-        self._client = chromadb.PersistentClient(Settings(anonymized_telemetry=False))
+        self._client = chromadb.PersistentClient(
+            settings=Settings(anonymized_telemetry=False)
+        )
         self._collection_name = self.codebase_path[1:].replace("/", "-")
         self._collection = self._client.get_or_create_collection(self._collection_name)
 
@@ -74,16 +68,14 @@ class ChromaIndex:
         return current_file_hash == stored_file_hash
 
     def _get_files_to_delete(self):
-        for file_path in self.index_cache:
-            if file_path not in self.all_file_paths:
-                self.files_to_delete.add(file_path)
+        self.files_to_delete = self.index_cache.keys() - self.all_file_paths
 
     def _chunk_file_content(
         self, content: str, max_chunk_size: int = 1000, overlap: int = 100
     ) -> list[str]:
-        return recursive_chunk_with_overlap(content, max_chunk_size, overlap)
+        return self._recursive_chunk_with_overlap(content, max_chunk_size, overlap)
 
-    def add_files_to_vector_db(self, progress: Progress):
+    def _add_files_to_vector_db(self, progress: Progress):
         task = progress.add_task("Indexing codebase", total=len(self.files_to_index))
         for file_to_index in self.files_to_index:
             chunks = self._chunk_file_content(file_to_index.content)
@@ -95,6 +87,56 @@ class ChromaIndex:
             )
             progress.update(task, advance=1)
 
+    def _handle_file(self, file_path: str):
+        self.all_file_paths.add(file_path)
+        with open(file_path, "r") as f:
+            current_file_content = f.read()
+            current_file_content = re.sub(r"\n", "", current_file_content)
+            current_file_hash = self._generate_file_content_hash(current_file_content)
+            stored_file_hash = self._get_stored_file_hash(file_path)
+            if not stored_file_hash or (
+                stored_file_hash and current_file_hash != stored_file_hash
+            ):
+                self.files_to_index.append(
+                    FileToIndex(file_path, current_file_hash, current_file_content)
+                )
+
+    def _walk_file_tree(self) -> Generator[str, None, None]:
+        for root, _, files in os.walk(self.codebase_path):
+            for file in files:
+                if not file.endswith(".py"):
+                    continue
+                file_path = os.path.join(root, file)
+                yield file_path
+
+    def _scan_codebase(self):
+        for file_path in self._walk_file_tree():
+            self._handle_file(file_path)
+
+    def _remove_file_from_index_cache(self, file_path: str):
+        del self.index_cache[file_path]
+
+    def _handle_files_to_delete(self):
+        self._get_files_to_delete()
+        for file_path in self.files_to_delete:
+            self._collection.delete(where={"file_path": file_path})
+            self._remove_file_from_index_cache(file_path)
+
+    def _update_index_cache(self):
+        for file_to_index in self.files_to_index:
+            self.index_cache[file_to_index.file_path] = {
+                "file_hash": file_to_index.file_hash,
+                "indexed_at": datetime.now().isoformat(),
+            }
+
+    def _handle_files_to_add(self, progress: Progress):
+        self._add_files_to_vector_db(progress)
+        self._update_index_cache()
+
+    def _write_index_cache(self):
+        with open(self.index_cache_dir / "index.json", "w") as f:
+            json.dump(self.index_cache, f)
+
     def index_codebase(self):
         with Progress(
             SpinnerColumn(),
@@ -103,47 +145,27 @@ class ChromaIndex:
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=self.console,
         ) as progress:
-            for root, _, files in os.walk(self.codebase_path):
-                for file in files:
-                    if not file.endswith(".py"):
-                        continue
-                    file_path = os.path.join(root, file)
-                    self.all_file_paths.add(file_path)
-                    with open(file_path, "r") as f:
-                        current_file_content = f.read()
-                        current_file_content = re.sub(r"\n", "", current_file_content)
-                        current_file_hash = self._generate_file_content_hash(
-                            current_file_content
-                        )
-                        stored_file_hash = self._get_stored_file_hash(file_path)
-                        if not stored_file_hash or (
-                            stored_file_hash and current_file_hash != stored_file_hash
-                        ):
-                            self.files_to_index.append(
-                                FileToIndex(
-                                    file_path, current_file_hash, current_file_content
-                                )
-                            )
+            self._scan_codebase()
+            self._handle_files_to_add(progress)
+            self._handle_files_to_delete()
+            self._write_index_cache()
 
-            self.add_files_to_vector_db(progress)
+    def _recursive_chunk_with_overlap(
+        self, text: str, max_chunk_size: int = 500, overlap: int = 50
+    ) -> list[str]:
+        if len(text) <= max_chunk_size:
+            return [text]
 
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + max_chunk_size
+            if end > len(text):
+                end = len(text)
 
-def recursive_chunk_with_overlap(
-    text: str, max_chunk_size: int = 500, overlap: int = 50
-) -> list[str]:
-    if len(text) <= max_chunk_size:
-        return [text]
+            chunk = text[start:end]
+            chunks.append(chunk)
 
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + max_chunk_size
-        if end > len(text):
-            end = len(text)
+            start += max_chunk_size - overlap
 
-        chunk = text[start:end]
-        chunks.append(chunk)
-
-        start += max_chunk_size - overlap
-
-    return chunks
+        return chunks
