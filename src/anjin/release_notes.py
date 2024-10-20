@@ -278,7 +278,7 @@ def check_updates(
         settings.USE_CACHE = not no_cache
 
         # await do_stuff(requirements_file, output_html, console_output, codebase_path)
-        chroma = ChromaIndex(codebase_path)
+        chroma = ChromaIndex(codebase_path, console)
         chroma.index_codebase()
 
     asyncio.run(main())
