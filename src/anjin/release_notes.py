@@ -161,7 +161,10 @@ async def process_single_dependency(
             description=f"[cyan]Summarizing changes for {package}",
         )
         summary = await summarize_changes(
-            changelog_result.changelog, package, codebase_path, requirements_file
+            changelog_result.changelog,
+            package,
+            codebase_path,
+            requirements_file,
         )
         changelog_result.summary = summary
 
@@ -173,7 +176,10 @@ async def process_single_dependency(
 
 
 async def do_stuff(
-    requirements_file: str, output_html: str, console_output: bool, codebase_path: str
+    requirements_file: str,
+    output_html: str,
+    console_output: bool,
+    codebase_path: str,
 ):
     console.print("[bold green]Parsing requirements file...[/bold green]")
     dependencies, ignored_packages = await parse_requirements(requirements_file)
@@ -277,9 +283,10 @@ def check_updates(
         settings.DEBUG = debug
         settings.USE_CACHE = not no_cache
 
-        # await do_stuff(requirements_file, output_html, console_output, codebase_path)
         chroma = ChromaIndex(codebase_path, console)
         chroma.index_codebase()
+        print("indexed codebase")
+        await do_stuff(requirements_file, output_html, console_output, codebase_path)
 
     asyncio.run(main())
 
