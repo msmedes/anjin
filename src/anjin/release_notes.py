@@ -285,7 +285,6 @@ def check_updates(
 
         chroma = ChromaIndex(codebase_path, console)
         chroma.index_codebase()
-        print("indexed codebase")
         await do_stuff(requirements_file, output_html, console_output, codebase_path)
 
     asyncio.run(main())
