@@ -60,11 +60,9 @@ class ChromaIndex:
         self._collection = self._client.get_or_create_collection(self._collection_name)
         self._index_cache_dir.mkdir(parents=True, exist_ok=True)
         self._index_cache = {}
-        if (self._index_cache_dir / "index.json").exists():
+        if (self._index_cache_dir / "index.json").exists() and not clear_cache:
             with open(self._index_cache_dir / "index.json", "r") as f:
                 self._index_cache = json.load(f)
-        if clear_cache:
-            self._index_cache = {}
         if clear_chroma:
             self._client.delete_collection(self._collection_name)
             self._collection = self._client.get_or_create_collection(
@@ -93,12 +91,9 @@ class ChromaIndex:
             task = progress.add_task(
                 "Indexing codebase", total=len(self._files_to_index)
             )
-            print("we did it")
         for file_to_index in self._files_to_index:
-            print("file_to_index", file_to_index.file_path)
             chunks = self._chunk_file_content(file_to_index.content)
             chunk_ids = [self._generate_file_content_hash(chunk) for chunk in chunks]
-            print("chunk ids", chunk_ids, file_to_index.file_path)
             self._collection.add(
                 metadatas=[{"file_path": file_to_index.file_path}] * len(chunks),
                 documents=chunks,
@@ -174,17 +169,14 @@ class ChromaIndex:
     ) -> list[str]:
         if len(text) <= max_chunk_size:
             return [text]
-
         chunks = []
         start = 0
         while start < len(text):
             end = start + max_chunk_size
             if end > len(text):
                 end = len(text)
-
             chunk = text[start:end]
             chunks.append(chunk)
-
             start += max_chunk_size - overlap
 
         return chunks

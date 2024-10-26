@@ -2,22 +2,15 @@ import asyncio
 import os
 import re
 
-import httpx
 import typer
-from packaging import version as pkg_version
 from rich.console import Console
-from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from typing_extensions import Annotated
 
-from anjin.cache import ChangelogCache
-from anjin.changelog_registry import (
-    ChangelogRetrievalResult,
-    ChangeLogRetrievalStatus,
-)
 from anjin.config import settings
+from anjin.dependency import DependencyRunner
 from anjin.generate_html import generate_html_output
-from anjin.openai_client import summarize_changes
 from anjin.vector import ChromaIndex
 
 # monkey patch the changelog registry to use the github token don't @ me
@@ -58,123 +51,6 @@ async def parse_requirements(file_path: str) -> tuple[dict, set]:
     return dependencies, ignored_packages
 
 
-async def get_latest_version(package: str) -> str:
-    url = f"https://pypi.org/pypi/{package}/json"
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            if response.status_code == 200:
-                return response.json()["info"]["version"]
-    except Exception as e:
-        print(f"Error fetching latest version for {package}: {str(e)}")
-    return None
-
-
-def filter_changelog_by_version(
-    changelog: dict, current_version: str, latest_version: str
-) -> str:
-    filtered_entries = []
-    for version, changes in changelog.items():
-        if pkg_version.parse(version) > pkg_version.parse(
-            current_version
-        ) and pkg_version.parse(version) <= pkg_version.parse(latest_version):
-            filtered_entries.append(f"## {version}\n{changes}")
-    return "\n\n".join(filtered_entries)
-
-
-async def fetch_changelog(
-    package: str, current_version: str, latest_version: str
-) -> ChangelogRetrievalResult:
-    if settings.USE_CACHE:
-        changelog_cache = ChangelogCache()
-        if changelog_cache.contains(package, current_version, latest_version):
-            cache = changelog_cache.get(package, current_version, latest_version)
-            return ChangelogRetrievalResult(
-                status=ChangeLogRetrievalStatus.SUCCESS, changelog=cache
-            )
-
-    try:
-        changelog = changelogs.get(package)
-        if changelog:
-            filtered_changelog = filter_changelog_by_version(
-                changelog, current_version, latest_version
-            )
-            if settings.USE_CACHE:
-                changelog_cache.set(
-                    package, current_version, latest_version, filtered_changelog
-                )
-            return ChangelogRetrievalResult(
-                status=ChangeLogRetrievalStatus.SUCCESS, changelog=filtered_changelog
-            )
-        else:
-            return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.NOT_FOUND)
-    except Exception as e:
-        print(f"Error fetching changelog for {package}: {str(e)}")
-        return ChangelogRetrievalResult(status=ChangeLogRetrievalStatus.FAILURE)
-
-
-async def process_single_dependency(
-    package: str,
-    current_version: str,
-    codebase_path: str,
-    requirements_file: str,
-    progress: Progress,
-    overall_task: TaskID,
-    package_task: TaskID,
-    ignored_packages: set[str],
-):
-    if package in ignored_packages:
-        progress.update(
-            package_task, completed=100, description=f"[yellow]Ignored {package}"
-        )
-        progress.update(overall_task, advance=1)
-        return None
-
-    progress.update(package_task, advance=0, description=f"[cyan]Processing {package}")
-
-    # Get latest version
-    latest_version = await get_latest_version(package)
-    progress.update(
-        package_task, advance=25, description=f"[cyan]Checking version for {package}"
-    )
-    if not latest_version or pkg_version.parse(latest_version) <= pkg_version.parse(
-        current_version
-    ):
-        progress.update(
-            package_task, advance=75, description=f"[yellow]{package} is up to date"
-        )
-        progress.update(overall_task, advance=1)
-        return None
-
-    # Fetch changelog
-    progress.update(
-        package_task,
-        advance=25,
-        description=f"[cyan]{'Fetching' if not settings.USE_CACHE else 'Checking'} changelog for {package}",
-    )
-    changelog_result = await fetch_changelog(package, current_version, latest_version)
-
-    if changelog_result.status == ChangeLogRetrievalStatus.SUCCESS:
-        progress.update(
-            package_task,
-            advance=25,
-            description=f"[cyan]Summarizing changes for {package}",
-        )
-        summary = await summarize_changes(
-            changelog_result.changelog,
-            package,
-            codebase_path,
-            requirements_file,
-        )
-        changelog_result.summary = summary
-
-    progress.update(
-        package_task, completed=100, description=f"[green]Completed {package}"
-    )
-    progress.update(overall_task, advance=1)
-    return package, current_version, latest_version, changelog_result
-
-
 async def do_stuff(
     requirements_file: str,
     output_html: str,
@@ -201,22 +77,17 @@ async def do_stuff(
         overall_task = progress.add_task(
             "[cyan]Overall progress", total=len(dependencies)
         )
-        package_tasks = {
-            package: progress.add_task(f"[cyan]{package}", total=100, start=False)
-            for package in dependencies.keys()
-        }
 
         tasks = [
-            process_single_dependency(
+            DependencyRunner(
                 package,
                 current_version,
                 codebase_path,
                 requirements_file,
                 progress,
                 overall_task,
-                package_tasks[package],
-                ignored_packages,
-            )
+                package in ignored_packages,
+            ).run()
             for package, current_version in dependencies.items()
         ]
 
